@@ -11,7 +11,7 @@
 
 namespace raytracing {
     namespace entities {
-        struct Sphere; struct Ray; struct Light;
+        struct Sphere; struct Ray; struct Light; struct Cube;
         namespace casting_ray {
 
             //TODO : description
@@ -114,6 +114,17 @@ namespace raytracing {
             /// \param t0 - coordinate of possible intersection
             /// \return
             bool ray_intersect(const Ray& r, float &t0) const override;
+        };
+
+        struct Cube : public Figure {
+            Cube(const Vec3f &vmin, const Vec3f &vmax, const Material &m) : Figure(m){
+                bounds[0] = vmin;
+                bounds[1] = vmax;
+            }
+            ~Cube() = default;
+
+            bool ray_intersect(const Ray &ray, float &t0) const override;
+            Vec3f bounds[2];
         };
 
     }// namespace entities

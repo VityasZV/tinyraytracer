@@ -116,6 +116,32 @@ namespace entities{
         return true;
     }
 
+    bool Cube::ray_intersect(const Ray &ray, float &t0) const {
+        float t_x_min, t_x_max, t_y_min, t_y_max, t_z_min, t_z_max;
+
+        t_x_min = (bounds[ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
+        t_x_max = (bounds[1 - ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
+        t_y_min = (bounds[ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
+        t_y_max = (bounds[1 - ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
+
+        if ((t_x_min > t_y_max) || (t_y_min > t_x_max))
+            return false;
+        if (t_y_min > t_x_min)
+            t_x_min = t_y_min;
+        if (t_y_max < t_x_max)
+            t_x_max = t_y_max;
+
+        t_z_min = (bounds[ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
+        t_z_max = (bounds[1 - ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
+
+        if ((t_x_min > t_z_max) || (t_z_min > t_x_max))
+            return false;
+        if (t_z_min > t_x_min)
+            t_x_min = t_z_min;
+        if (t_z_max < t_x_max)
+            t_x_max = t_z_max;
+        return true;
+    }
 }// namespace entities
 
 
