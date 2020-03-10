@@ -4,20 +4,76 @@
 
 #ifndef TINYRAYTRACER_ENTITIES_H
 #define TINYRAYTRACER_ENTITIES_H
+
+#include "optional"
+
+
+
 namespace raytracing {
     namespace entities {
+        struct Sphere; struct Ray; struct Light;
+        namespace casting_ray {
+
+            //TODO : description
+            /// cast_ray - casts new rays for reflect, refract.
+            /// \param ray
+            /// \param spheres
+            /// \param lights
+            /// \param depth
+            /// \return
+            Vec3f cast_ray(const Ray &ray, const std::vector<raytracing::entities::Sphere> &spheres,
+                           const std::vector<raytracing::entities::Light> &lights, size_t depth = 0);
+        }
 
         struct Light {
+            Vec3f position;
+            float intensity;
             /// Light is a source of light
             /// \param p - position of light source
             /// \param i - intensity of light source
             Light(const Vec3f &p, const float i) : position(p), intensity(i) {}
+        };
 
-            Vec3f position;
-            float intensity;
+        struct Ray {
+        private:
+            /// sets color for ray, calling cast_ray function
+            /// \param spheres
+            /// \param lights
+            /// \param depth
+            void SetColor(const std::vector<Sphere> &spheres, const std::vector<Light> &lights, size_t depth){
+                color = casting_ray::cast_ray(*this, spheres, lights, depth);
+            }
+
+        public:
+            Vec3f orig, dir;       // ray orig and dir
+            Vec3f invdir;          // inverse direction
+            int sign[3];
+            std::optional<Vec3f> color = std::nullopt;
+
+
+            /// Ray
+            /// \param orig - source of ray
+            /// \param dir - direction of ray
+            Ray(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> * const spheres_ptr = nullptr,
+                    const std::vector<Light>* const lights_ptr = nullptr, const std::optional<size_t> depth = std::nullopt) : orig(orig), dir(dir) {
+                invdir = 1 / dir;
+                sign[0] = (invdir.x < 0);
+                sign[1] = (invdir.y < 0);
+                sign[2] = (invdir.z < 0);
+                if (depth.has_value()) {
+                    SetColor(*spheres_ptr, *lights_ptr, depth.value());
+                }
+            }
+
+
         };
 
         struct Material {
+            float refractive_index;
+            Vec4f albedo;
+            Vec3f diffuse_color;
+            float specular_exponent;
+
             /// Material is a
             /// \param r
             /// \param a
@@ -29,30 +85,35 @@ namespace raytracing {
                                                                                             specular_exponent(spec) {}
 
             Material() : refractive_index(1), albedo(1, 0, 0, 0), diffuse_color(), specular_exponent() {}
-
-            float refractive_index;
-            Vec4f albedo;
-            Vec3f diffuse_color;
-            float specular_exponent;
         };
 
-        struct Sphere {
+        namespace {
+            struct Figure {
+                Material material;
+                Figure(const Material& m): material(m){}
+                virtual ~Figure() = default;
+                virtual bool ray_intersect(const Ray& ray, float &t0) const = 0;
+            };
+
+        }// namespace
+
+
+
+        struct Sphere : public Figure {
             Vec3f center;
             float radius;
-            Material material;
-
             /// Sphere - object that constructed by
             /// \param c - its center
             /// \param r - its radius
             /// \param m - its material
-            Sphere(const Vec3f &c, const float r, const Material &m) : center(c), radius(r), material(m) {}
+            Sphere(const Vec3f &c, const float r, const Material &m) : Figure(m), center(c), radius(r) {}
+            ~Sphere() = default;
 
             /// ray_intersect - checks if ray intersects sphere
-            /// \param orig - position of light
-            /// \param dir - direction of light ray
-            /// \param t0 - coordinate of intersection
-            /// \return true if ray intersects sphere, false otherwise
-            bool ray_intersect(const Vec3f &orig, const Vec3f &dir, float &t0) const;
+            /// \param r - Ray
+            /// \param t0 - coordinate of possible intersection
+            /// \return
+            bool ray_intersect(const Ray& r, float &t0) const override;
         };
 
     }// namespace entities
