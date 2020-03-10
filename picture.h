@@ -20,7 +20,7 @@ enum class MaterialName {
     red_rubber
 };
 struct SphereParams {
-    SphereParams(const Vec3f& coordinates, const float &radius, const raytracing::entities::Material& material) :
+    SphereParams(const Vec3f& coordinates, const float &radius, const raytracing::entities::Material &material) :
             coordinates(coordinates), material(material), radius(radius){}
     Vec3f coordinates;
     raytracing::entities::Material material;
@@ -32,6 +32,14 @@ struct LightParams {
             position(position), intensity(intensity){}
     Vec3f position;
     float intensity;
+};
+
+struct CubeParams {
+    CubeParams(const Vec3f &vmin, const Vec3f &vmax, const raytracing::entities::Material &m) :
+                vmin(vmin), vmax(vmax), material(m){}
+    Vec3f vmin;
+    Vec3f vmax;
+    raytracing::entities::Material material;
 };
 
 }// namespace
@@ -56,6 +64,10 @@ private:
             {Vec3f(30, 50, -25), 1.8},
             {Vec3f(30, 20, 30), 1.7}
     };
+
+    std::vector<CubeParams> cubes_params{
+            {Vec3f(-10, -4, 0), Vec3f(0, 6, -10), Materials[MaterialName::red_rubber]}
+    };
 public:
     Picture(){
         for (const auto& p : spheres_params){
@@ -64,10 +76,14 @@ public:
         for (const auto& p : lights_params){
             lights.emplace_back(raytracing::entities::Light(p.position, p.intensity));
         }
+        for (const auto& p : cubes_params){
+            cubes.emplace_back(raytracing::entities::Cube(p.vmin, p.vmax, p.material));
+        }
     }
     ~Picture() = default;
     std::vector<raytracing::entities::Sphere> spheres;
     std::vector<raytracing::entities::Light> lights;
+    std::vector<raytracing::entities::Cube> cubes;
 };
 
 }// namespace picture

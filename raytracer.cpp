@@ -4,7 +4,7 @@
 int main() {
     try {
         picture::Picture my_pic;
-        raytracing::render(my_pic.spheres, my_pic.lights);
+        raytracing::render(my_pic.spheres, my_pic.lights, my_pic.cubes);
         std::cout << "result is saved in build directory in file out.ppm" << std::endl;
     }
     catch (const std::exception& er){

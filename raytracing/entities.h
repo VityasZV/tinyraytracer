@@ -22,7 +22,8 @@ namespace casting_ray {
     /// \param depth
     /// \return
     Vec3f cast_ray(const Ray &ray, const std::vector<Sphere> &spheres,
-                   const std::vector<Light> &lights, size_t depth = 0);
+                   const std::vector<Light> &lights,
+                   const std::vector<entities::Cube> &cubes, size_t depth = 0);
 }
 
 struct Light {
@@ -40,8 +41,9 @@ private:
     /// \param spheres
     /// \param lights
     /// \param depth
-    void SetColor(const std::vector<Sphere> &spheres, const std::vector<Light> &lights, size_t depth){
-        color = casting_ray::cast_ray(*this, spheres, lights, depth);
+    void SetColor(const std::vector<Sphere> &spheres, const std::vector<Light> &lights,
+                  const std::vector<entities::Cube> &cubes, size_t depth){
+        color = casting_ray::cast_ray(*this, spheres, lights, cubes, depth);
     }
 
 public:
@@ -55,13 +57,15 @@ public:
     /// \param orig - source of ray
     /// \param dir - direction of ray
     Ray(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> * const spheres_ptr = nullptr,
-            const std::vector<Light>* const lights_ptr = nullptr, const std::optional<size_t> depth = std::nullopt) : orig(orig), dir(dir) {
+            const std::vector<Light>* const lights_ptr = nullptr,
+            const std::vector<entities::Cube>* const cubes_ptr = nullptr,
+            const std::optional<size_t> depth = std::nullopt) : orig(orig), dir(dir) {
         invdir = 1 / dir;
         sign[0] = (invdir.x < 0);
         sign[1] = (invdir.y < 0);
         sign[2] = (invdir.z < 0);
         if (depth.has_value()) {
-            SetColor(*spheres_ptr, *lights_ptr, depth.value());
+            SetColor(*spheres_ptr, *lights_ptr, *cubes_ptr, depth.value());
         }
     }
 };
@@ -115,13 +119,17 @@ struct Sphere : public Figure {
 };
 
 struct Cube : public Figure {
+    ///To represent an axis-aligned bounding volume, all we need are two points
+    /// representing the minimum and maximum extent of the box (called bounds in the code).
     Cube(const Vec3f &vmin, const Vec3f &vmax, const Material &m) : Figure(m){
-        bounds[0] = vmin;
-        bounds[1] = vmax;
+        bounds[0] = vmin;//левая нижняя ближняя?
+        bounds[1] = vmax;//правая верхняя дальная?
     }
     ~Cube() = default;
 
     bool ray_intersect(const Ray &ray, float &t0) const override;
+    ///The bounds of the volume define a set of lines parallel to each axis
+    ///of the coordinate system which we can also expressed using the line equation.
     Vec3f bounds[2];
 };
 

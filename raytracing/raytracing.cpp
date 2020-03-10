@@ -64,7 +64,8 @@ namespace entities{
 
     Vec3f casting_ray::cast_ray(const Ray &ray,
                                 const std::vector<Sphere> &spheres,
-                                const std::vector<Light> &lights, size_t depth) {
+                                const std::vector<Light> &lights,
+                                const std::vector<entities::Cube> &cubes, size_t depth) {
         Vec3f point, N;
         Material material;
 
@@ -76,9 +77,9 @@ namespace entities{
         Vec3f reflect_dir = reflect(ray.dir, N).normalize();
         Vec3f refract_dir = refract(ray.dir, N, material.refractive_index).normalize();
         Ray reflect_ray(reflect_dir*N < 0 ? point - N*1e-3 : point + N*1e-3,
-                                              reflect_dir, &spheres, &lights, depth+1);// offset the original point to avoid occlusion by the object itself (in first param)
+                                              reflect_dir, &spheres, &lights, &cubes, depth+1);// offset the original point to avoid occlusion by the object itself (in first param)
         Ray refract_ray(refract_dir*N < 0 ? point - N*1e-3 : point + N*1e-3,
-                                              refract_dir, &spheres, &lights, depth + 1);
+                                              refract_dir, &spheres, &lights, &cubes, depth + 1);
 
         float diffuse_light_intensity = 0, specular_light_intensity = 0;
         for (size_t i=0; i<lights.size(); i++) {
@@ -148,7 +149,8 @@ namespace entities{
 
 
 
-void render(const std::vector<entities::Sphere> &spheres, const std::vector<entities::Light> &lights) {
+void render(const std::vector<entities::Sphere> &spheres, const std::vector<entities::Light> &lights,
+            const std::vector<entities::Cube> &cubes) {
     const int   width    = 1920;
     const int   height   = 1080;
     const float fov      = M_PI/3.; ///that's a viewing angle = pi/3
@@ -169,7 +171,7 @@ void render(const std::vector<entities::Sphere> &spheres, const std::vector<enti
                     auto dir_z = -height / (2. * tan(fov / 2.));
                     framebuffer[i + j * width] = entities::casting_ray::cast_ray(entities::Ray(
                             Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z).normalize()),
-                                                          spheres, lights);
+                                                          spheres, lights, cubes);
                 }
             });
         }
