@@ -116,6 +116,7 @@ namespace entities{
         return true;
     }
 
+    //TODO needs testing
     bool Cube::ray_intersect(const Ray &ray, float &t0) const {
         float t_x_min, t_x_max, t_y_min, t_y_max, t_z_min, t_z_max;
 
