@@ -47,11 +47,11 @@ bool scene_intersect(const Vec3f &orig, const Vec3f &dir, const std::vector<rayt
     if (fabs(dir.y)>1e-3)  {
         float d = -(orig.y+4)/dir.y; // the checkerboard plane has equation y = -4
         Vec3f pt = orig + dir*d;
-        if (d>0 && fabs(pt.x)<10 && pt.z<-10 && pt.z>-30 && d<spheres_dist) {
+        if (d>0 && d<spheres_dist) {
             checkerboard_dist = d;
             hit = pt;
             N = Vec3f(0,1,0);
-            material.diffuse_color = (int(.5*hit.x+1000) + int(.5*hit.z)) & 1 ? Vec3f(.3, .3, .3) : Vec3f(.3, .2, .1);
+            material.diffuse_color = (int(.5*hit.x+1000) + int(.5*hit.z)) & 1 ? Vec3f(.10, .10, .10) : Vec3f(.3, .2, .1);
         }
     }
     return std::min(spheres_dist, checkerboard_dist)<1000;
@@ -70,7 +70,7 @@ Vec3f cast_ray(const Vec3f &orig, const Vec3f &dir, const std::vector<raytracing
     raytracing::entities::Material material;
 
     if (depth>4 || !scene_intersect(orig, dir, spheres, point, N, material)) {
-        return Vec3f(0.2, 0.7, 0.8); // background color
+        return Vec3f(0, float(127.0/255), float(255.0/255)); // background color
     }
 
     Vec3f reflect_dir = reflect(dir, N).normalize();
