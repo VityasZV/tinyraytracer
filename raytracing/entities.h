@@ -5,9 +5,9 @@
 #ifndef TINYRAYTRACER_ENTITIES_H
 #define TINYRAYTRACER_ENTITIES_H
 
-#include "optional"
 #include "../geometry.h"
-
+#include <optional>
+#include <array>
 
 namespace raytracing::entities {
 
@@ -49,7 +49,7 @@ private:
 public:
     Vec3f orig, dir;       // ray orig and dir
     Vec3f invdir;          // inverse direction
-    int sign[3];
+    std::array<int, 3> sign;
     std::optional<Vec3f> color = std::nullopt;
 
 
@@ -68,6 +68,7 @@ public:
             SetColor(*spheres_ptr, *lights_ptr, *cubes_ptr, depth.value());
         }
     }
+    Ray(const Ray& r) : orig(r.orig), dir(r.dir), invdir(r.invdir), sign(r.sign), color(r.color){}
 };
 
 struct Material {
@@ -92,7 +93,8 @@ struct Material {
 namespace {
     struct Figure {
         Material material;
-        Figure(const Material& m): material(m){}
+        Figure(const Material &m): material(m){}
+        Figure(const Figure &f): material(f.material) {}
         virtual ~Figure() = default;
         virtual bool ray_intersect(const Ray& ray, float &t0) const = 0;
     };
@@ -110,7 +112,7 @@ struct Sphere : public Figure {
     /// \param m - its material
     Sphere(const Vec3f &c, const float r, const Material &m) : Figure(m), center(c), radius(r) {}
     ~Sphere() = default;
-
+    Sphere(const Sphere &s) : Figure(s.material), center(s.center), radius(s.radius){}
     /// ray_intersect - checks if ray intersects sphere
     /// \param r - Ray
     /// \param t0 - coordinate of possible intersection
@@ -126,11 +128,11 @@ struct Cube : public Figure {
         bounds[1] = vmax;//правая верхняя дальная?
     }
     ~Cube() = default;
-
+    Cube(const Cube &c) : Figure(c.material), bounds(c.bounds){}
     bool ray_intersect(const Ray &ray, float &t0) const override;
     ///The bounds of the volume define a set of lines parallel to each axis
     ///of the coordinate system which we can also expressed using the line equation.
-    Vec3f bounds[2];
+    std::array<Vec3f, 2> bounds;
 };
 
 }
