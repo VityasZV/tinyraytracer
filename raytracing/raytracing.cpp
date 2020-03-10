@@ -31,7 +31,9 @@ Vec3f refract(const Vec3f &I, const Vec3f &N, const float eta_t, const float eta
     return k<0 ? Vec3f(1,0,0) : I*eta + N*(eta*cosi - sqrtf(k)); // k<0 = total reflection, no ray to refract. I refract it anyways, this has no physical meaning
 }
 
-bool scene_intersect(const raytracing::entities::Ray& ray, const std::vector<raytracing::entities::Sphere> &spheres, Vec3f &hit, Vec3f &N, raytracing::entities::Material &material) {
+bool scene_intersect(const raytracing::entities::Ray& ray, const std::vector<raytracing::entities::Sphere> &spheres,
+                     const std::vector<raytracing::entities::Cube> &cubes,
+                     Vec3f &hit, Vec3f &N, raytracing::entities::Material &material) {
     float spheres_dist = std::numeric_limits<float>::max();
     for (size_t i=0; i < spheres.size(); i++) {
         float dist_i;
@@ -40,6 +42,18 @@ bool scene_intersect(const raytracing::entities::Ray& ray, const std::vector<ray
             hit = ray.orig + ray.dir*dist_i;
             N = (hit - spheres[i].center).normalize();
             material = spheres[i].material;
+        }
+    }
+
+    float cubes_dist = std::numeric_limits<float>::max();
+    for (size_t i=0; i < cubes.size(); i++) {
+        float dist_i;
+        if (cubes[i].ray_intersect(ray, dist_i) && dist_i < cubes_dist) {
+            cubes_dist = dist_i;
+            hit = ray.orig + ray.dir * dist_i;
+            // TODO вот от N зависит цвет проекции походу каждой
+            N = (hit - cubes[i].bounds[0]).normalize();
+            material = cubes[i].material;
         }
     }
 
@@ -54,7 +68,7 @@ bool scene_intersect(const raytracing::entities::Ray& ray, const std::vector<ray
             material.diffuse_color = (int(.5*hit.x+1000) + int(.5*hit.z)) & 1 ? Vec3f(.10, .10, .10) : Vec3f(.3, .2, .1);
         }
     }
-    return std::min(spheres_dist, checkerboard_dist)<1000;
+    return std::min({spheres_dist, checkerboard_dist, cubes_dist})<1000;
 }
 
 
@@ -69,7 +83,7 @@ namespace entities{
         Vec3f point, N;
         Material material;
 
-        if (depth>4 || !scene_intersect(ray, spheres, point, N, material)) {
+        if (depth>4 || !scene_intersect(ray, spheres, cubes, point, N, material)) {
             return Vec3f(0, float(127.0/255), float(255.0/255)); // background color
         }
 
@@ -89,7 +103,7 @@ namespace entities{
             Vec3f shadow_orig = light_dir*N < 0 ? point - N*1e-3 : point + N*1e-3; // checking if the point lies in the shadow of the lights[i]
             Vec3f shadow_pt, shadow_N;
             Material tmp_material;
-            if (scene_intersect(Ray(shadow_orig, light_dir), spheres,
+            if (scene_intersect(Ray(shadow_orig, light_dir), spheres, cubes,
                                 shadow_pt, shadow_N, tmp_material) &&
                 (shadow_pt - shadow_orig).norm() < light_distance)
                 continue;
@@ -119,29 +133,37 @@ namespace entities{
 
     //TODO needs testing
     bool Cube::ray_intersect(const Ray &ray, float &t0) const {
-        float t_x_min, t_x_max, t_y_min, t_y_max, t_z_min, t_z_max;
+        float t_min, t_max, t_y_min, t_y_max, t_z_min, t_z_max;
 
-        t_x_min = (bounds[ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
-        t_x_max = (bounds[1 - ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
+        t_min = (bounds[ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
+        t_max = (bounds[1 - ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
         t_y_min = (bounds[ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
         t_y_max = (bounds[1 - ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
 
-        if ((t_x_min > t_y_max) || (t_y_min > t_x_max))
+        if ((t_min > t_y_max) || (t_y_min > t_max))
             return false;
-        if (t_y_min > t_x_min)
-            t_x_min = t_y_min;
-        if (t_y_max < t_x_max)
-            t_x_max = t_y_max;
+        if (t_y_min > t_min)
+            t_min = t_y_min;
+        if (t_y_max < t_max)
+            t_max = t_y_max;
 
         t_z_min = (bounds[ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
         t_z_max = (bounds[1 - ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
 
-        if ((t_x_min > t_z_max) || (t_z_min > t_x_max))
+        if ((t_min > t_z_max) || (t_z_min > t_max))
             return false;
-        if (t_z_min > t_x_min)
-            t_x_min = t_z_min;
-        if (t_z_max < t_x_max)
-            t_x_max = t_z_max;
+        if (t_z_min > t_min)
+            t_min = t_z_min;
+        if (t_z_max < t_max)
+            t_max = t_z_max;
+
+        t0 = t_min;
+
+        if (t0 < 0) {
+            t0 = t_max;
+            if (t0 < 0) return false;
+        }
+
         return true;
     }
 }// namespace entities

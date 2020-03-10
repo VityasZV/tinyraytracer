@@ -66,7 +66,7 @@ private:
     };
 
     std::vector<CubeParams> cubes_params{
-            {Vec3f(-10, -4, 0), Vec3f(0, 6, -10), Materials[MaterialName::red_rubber]}
+            {Vec3f(-3, 0, -3), Vec3f(1, 4, -7), Materials[MaterialName::red_rubber]}
     };
 public:
     Picture(){
@@ -76,9 +76,9 @@ public:
         for (const auto& p : lights_params){
             lights.emplace_back(raytracing::entities::Light(p.position, p.intensity));
         }
-        for (const auto& p : cubes_params){
-            cubes.emplace_back(raytracing::entities::Cube(p.vmin, p.vmax, p.material));
-        }
+//        for (const auto& p : cubes_params){
+//            cubes.emplace_back(raytracing::entities::Cube(p.vmin, p.vmax, p.material));
+//        }
     }
     ~Picture() = default;
     std::vector<raytracing::entities::Sphere> spheres;
