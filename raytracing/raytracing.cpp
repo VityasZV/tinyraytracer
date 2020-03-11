@@ -32,6 +32,7 @@ Vec3f refract(const Vec3f &I, const Vec3f &N, const float eta_t, const float eta
 }
 
 // scene_intersect - checks intersection ray with picture itself
+// i will try hard
 bool scene_intersect(const Vec3f &orig, const Vec3f &dir, const std::vector<raytracing::entities::Sphere> &spheres, Vec3f &hit, Vec3f &N, raytracing::entities::Material &material) {
     float spheres_dist = std::numeric_limits<float>::max();
     for (size_t i=0; i < spheres.size(); i++) {
