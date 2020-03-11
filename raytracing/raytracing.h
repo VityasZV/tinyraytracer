@@ -9,7 +9,8 @@ namespace raytracing {
 ///          picture,
 /// \param spheres - vector of spheres
 /// \param lights - vector of lights
-void render(const std::vector<entities::Sphere> &spheres,
+void render(const char* outFilePath,
+            const std::vector<entities::Sphere> &spheres,
             const std::vector<entities::Light> &lights,
             const std::vector<entities::Cube> &cubes);
 

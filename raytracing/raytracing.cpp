@@ -171,7 +171,7 @@ namespace entities{
 
 
 
-void render(const std::vector<entities::Sphere> &spheres, const std::vector<entities::Light> &lights,
+void render(const char* outFilePath, const std::vector<entities::Sphere> &spheres, const std::vector<entities::Light> &lights,
             const std::vector<entities::Cube> &cubes) {
     const int   width    = 1920;
     const int   height   = 1080;
@@ -204,7 +204,7 @@ void render(const std::vector<entities::Sphere> &spheres, const std::vector<enti
     }
 
     std::ofstream ofs; // save the framebuffer to file
-    ofs.open("./out.ppm",std::ios::binary);
+    ofs.open(outFilePath, std::ios::binary);
     ofs << "P6\n" << width << " " << height << "\n255\n";
     for (size_t i = 0; i < height*width; ++i) {
         Vec3f &c = framebuffer[i];
