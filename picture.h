@@ -71,6 +71,8 @@ private:
         }   
         if(cmd_line_params.find("-out") != cmd_line_params.end())
             out_file_path = cmd_line_params["-out"];
+        if(cmd_line_params.find("-scene") != cmd_line_params.end())
+        scene_id = atoi(cmd_line_params["-scene"].c_str());
     } 
 
     std::unordered_map<MaterialName, raytracing::entities::Material> Materials {
@@ -118,6 +120,7 @@ private:
     };
 public:
     std::string out_file_path = "out.ppm";
+    int scene_id = 1;
     Picture(const int argc, const char** argv){
         PreparingOutFileAndScene (argc, argv);
         for (const auto& p : spheres_params){
