@@ -69,10 +69,9 @@ bool scene_intersect(const raytracing::entities::Ray& ray, const std::vector<ray
         std::vector <float> Coords ={cubes[i].bounds[0].x,cubes[i].bounds[1].x,cubes[i].bounds[0].y,cubes[i].bounds[1].y,cubes[i].bounds[0].z,cubes[i].bounds[1].z};
         float LenD=sqrt(std::pow(Coords[0]-Coords[1],2) + std::pow(Coords[2]-Coords[3],2) + std::pow(Coords[4]-Coords[5],2));
         std::vector <Vec3f> CubePoint = {cubes[i].bounds[0]+Vec3f(0,LenD/sqrt(3),0), cubes[i].bounds[1]+Vec3f(-LenD/sqrt(3),0,0) ,
-                                         cubes[i].bounds[1], cubes[i].bounds[1]+Vec3f(0,0,-LenD/sqrt(3)), cubes[i].bounds[0],
-                                         cubes[i].bounds[0]+Vec3f(0,0,LenD/sqrt(3)),
+                                         cubes[i].bounds[1], cubes[i].bounds[1]+Vec3f(0,0,LenD/sqrt(3)), cubes[i].bounds[0],
+                                         cubes[i].bounds[0]+Vec3f(0,0,-LenD/sqrt(3)),
                                          cubes[i].bounds[1]+Vec3f(0,-LenD/sqrt(3),0),cubes[i].bounds[0]+Vec3f(LenD/sqrt(3),0,0)};
-
         if (cubes[i].ray_intersect(ray, dist_i) && dist_i < cubes_dist) {
             cubes_dist = dist_i;
             hit = ray.orig + ray.dir * dist_i;
@@ -86,7 +85,7 @@ bool scene_intersect(const raytracing::entities::Ray& ray, const std::vector<ray
             if (PointCheck(CubePoint[0],CubePoint[1],CubePoint[2],hit))
                 N=cross(Vec10,Vec12);
             if (PointCheck(CubePoint[0],CubePoint[1],CubePoint[5],hit))
-                N=cross(Vec10,Vec12);
+                N=cross(Vec10,Vec15);
             if (PointCheck(CubePoint[1],CubePoint[2],CubePoint[5],hit))
                 N=cross(Vec12,Vec15);
             if (PointCheck(CubePoint[2],CubePoint[3],CubePoint[6],hit))
