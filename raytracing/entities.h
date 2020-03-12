@@ -11,7 +11,7 @@
 
 namespace raytracing::entities {
 
-struct Sphere; struct Ray; struct Light; struct Cube;
+struct Sphere; struct Ray; struct Light; struct Cube; struct Triangle;
 namespace casting_ray {
 
     //TODO : description
@@ -23,7 +23,8 @@ namespace casting_ray {
     /// \return
     Vec3f cast_ray(const Ray &ray, const std::vector<Sphere> &spheres,
                    const std::vector<Light> &lights,
-                   const std::vector<entities::Cube> &cubes, size_t depth = 0);
+                   const std::vector<entities::Cube> &cubes,
+                   const std::vector<entities::Triangle> &triangles, size_t depth = 0);
 }
 
 struct Light {
@@ -42,8 +43,9 @@ private:
     /// \param lights
     /// \param depth
     void SetColor(const std::vector<Sphere> &spheres, const std::vector<Light> &lights,
-                  const std::vector<entities::Cube> &cubes, size_t depth){
-        color = casting_ray::cast_ray(*this, spheres, lights, cubes, depth);
+                  const std::vector<entities::Cube> &cubes,
+                  const std::vector<entities::Triangle> &triangles, size_t depth){
+        color = casting_ray::cast_ray(*this, spheres, lights, cubes, triangles, depth);
     }
 
 public:
@@ -59,13 +61,14 @@ public:
     Ray(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> * const spheres_ptr = nullptr,
             const std::vector<Light>* const lights_ptr = nullptr,
             const std::vector<entities::Cube>* const cubes_ptr = nullptr,
+            const std::vector<entities::Triangle>* const triangles_ptr = nullptr,
             const std::optional<size_t> depth = std::nullopt) : orig(orig), dir(dir) {
         invdir = 1 / dir;
         sign[0] = (invdir.x < 0);
         sign[1] = (invdir.y < 0);
         sign[2] = (invdir.z < 0);
         if (depth.has_value()) {
-            SetColor(*spheres_ptr, *lights_ptr, *cubes_ptr, depth.value());
+            SetColor(*spheres_ptr, *lights_ptr, *cubes_ptr, *triangles_ptr, depth.value());
         }
     }
     Ray(const Ray& r) : orig(r.orig), dir(r.dir), invdir(r.invdir), sign(r.sign), color(r.color){}
@@ -101,6 +104,22 @@ namespace {
 
 }// namespace
 
+    struct Triangle : public Figure {
+        Vec3f p0, p1, p2;
+        //Triangle() : Figure(), p0{}, p1{}, p2{} {};
+
+        Triangle(Vec3f p0, Vec3f p1, Vec3f p2, const Material &m) : Figure(m), p0(p0), p1(p1), p2(p2) {}
+
+        Triangle(const std::vector<Vec3f> &vec, const Material &m) : Figure(m), p0(vec[0]), p1(vec[1]), p2(vec[2]) {}
+
+
+        bool ray_intersect(const Ray &ray, float &t0) const override;
+
+        //нормаль
+        Vec3f get_N() const{
+            return (cross(p1 - p0, p2 - p0)).normalize();
+        }
+    };
 
 
 struct Sphere : public Figure {

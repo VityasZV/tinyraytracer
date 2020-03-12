@@ -5,7 +5,7 @@ int main(int argc, const char** argv)
 {    
   try {
       picture::Picture my_pic (argc, argv);
-      raytracing::render(my_pic.out_file_path.c_str(), my_pic.spheres, my_pic.lights, my_pic.cubes);
+      raytracing::render(my_pic.out_file_path.c_str(), my_pic.spheres, my_pic.lights, my_pic.cubes, my_pic.triangles);
       std::cout << "result is saved in build directory in file " << my_pic.out_file_path.c_str() << std::endl;
   }
   catch (const std::exception& er){
