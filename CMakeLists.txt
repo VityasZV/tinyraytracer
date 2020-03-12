@@ -20,6 +20,7 @@ enable_cxx_compiler_flag_if_supported("-pedantic")
 enable_cxx_compiler_flag_if_supported("-std=c++17")
 enable_cxx_compiler_flag_if_supported("-pthread")
 enable_cxx_compiler_flag_if_supported("-O3")
+#enable_cxx_compiler_flag_if_supported("-Ofast")
 
 
 

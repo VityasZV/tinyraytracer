@@ -32,7 +32,7 @@ Vec3f refract(const Vec3f &I, const Vec3f &N, const float eta_t, const float eta
 }
 
 bool scene_intersect(const raytracing::entities::Ray& ray, const std::vector<raytracing::entities::Sphere> &spheres,
-                     const std::vector<raytracing::entities::Cube> &cubes,
+                     const std::vector<raytracing::entities::Cube> &cubes, const std::vector<raytracing::entities::Triangle> &triangles,
                      Vec3f &hit, Vec3f &N, raytracing::entities::Material &material) {
     float spheres_dist = std::numeric_limits<float>::max();
     for (size_t i=0; i < spheres.size(); i++) {
@@ -42,6 +42,17 @@ bool scene_intersect(const raytracing::entities::Ray& ray, const std::vector<ray
             hit = ray.orig + ray.dir*dist_i;
             N = (hit - spheres[i].center).normalize();
             material = spheres[i].material;
+        }
+    }
+
+    float triangles_dist = std::numeric_limits<float>::max();
+    for (size_t i = 0; i < triangles.size(); ++i){
+        float dist_i;
+        if (triangles[i].ray_intersect(ray, dist_i) && dist_i < triangles_dist){
+            triangles_dist = dist_i;
+            hit = ray.orig + ray.dir*dist_i;
+            N = triangles[i].get_N();
+            material = triangles[i].material;
         }
     }
 
@@ -61,14 +72,14 @@ bool scene_intersect(const raytracing::entities::Ray& ray, const std::vector<ray
     if (fabs(ray.dir.y)>1e-3)  {
         float d = -(ray.orig.y+4)/ray.dir.y; // the checkerboard plane has equation y = -4
         Vec3f pt = ray.orig + ray.dir*d;
-        if (d>0 && d<spheres_dist) {
+        if (d>0 && d<spheres_dist && d < triangles_dist) {
             checkerboard_dist = d;
             hit = pt;
             N = Vec3f(0,1,0);
             material.diffuse_color = (int(.5*hit.x+1000) + int(.5*hit.z)) & 1 ? Vec3f(.10, .10, .10) : Vec3f(.3, .2, .1);
         }
     }
-    return std::min({spheres_dist, checkerboard_dist, cubes_dist})<1000;
+    return std::min({spheres_dist, checkerboard_dist, cubes_dist, triangles_dist})<1000;
 }
 
 
@@ -79,11 +90,12 @@ namespace entities{
     Vec3f casting_ray::cast_ray(const Ray &ray,
                                 const std::vector<Sphere> &spheres,
                                 const std::vector<Light> &lights,
-                                const std::vector<entities::Cube> &cubes, size_t depth) {
+                                const std::vector<entities::Cube> &cubes,
+                                const std::vector<entities::Triangle> &triangles, size_t depth) {
         Vec3f point, N;
         Material material;
 
-        if (depth>4 || !scene_intersect(ray, spheres, cubes, point, N, material)) {
+        if (depth>4 || !scene_intersect(ray, spheres, cubes, triangles, point, N, material)) {
             return Vec3f(0, float(127.0/255), float(255.0/255)); // background color
         }
 
@@ -91,9 +103,9 @@ namespace entities{
         Vec3f reflect_dir = reflect(ray.dir, N).normalize();
         Vec3f refract_dir = refract(ray.dir, N, material.refractive_index).normalize();
         Ray reflect_ray(reflect_dir*N < 0 ? point - N*1e-3 : point + N*1e-3,
-                                              reflect_dir, &spheres, &lights, &cubes, depth+1);// offset the original point to avoid occlusion by the object itself (in first param)
+                                              reflect_dir, &spheres, &lights, &cubes, &triangles, depth+1);// offset the original point to avoid occlusion by the object itself (in first param)
         Ray refract_ray(refract_dir*N < 0 ? point - N*1e-3 : point + N*1e-3,
-                                              refract_dir, &spheres, &lights, &cubes, depth + 1);
+                                              refract_dir, &spheres, &lights, &cubes, &triangles, depth + 1);
 
         float diffuse_light_intensity = 0, specular_light_intensity = 0;
         for (size_t i=0; i<lights.size(); i++) {
@@ -103,7 +115,7 @@ namespace entities{
             Vec3f shadow_orig = light_dir*N < 0 ? point - N*1e-3 : point + N*1e-3; // checking if the point lies in the shadow of the lights[i]
             Vec3f shadow_pt, shadow_N;
             Material tmp_material;
-            if (scene_intersect(Ray(shadow_orig, light_dir), spheres, cubes,
+            if (scene_intersect(Ray(shadow_orig, light_dir), spheres, cubes, triangles,
                                 shadow_pt, shadow_N, tmp_material) &&
                 (shadow_pt - shadow_orig).norm() < light_distance)
                 continue;
@@ -166,18 +178,52 @@ namespace entities{
 
         return true;
     }
+
+    bool Triangle::ray_intersect(const Ray &ray, float &t0) const {
+        const float EPSILON = 0.0000001;
+        Vec3f vertex0 = p0;
+        Vec3f vertex1 = p1;
+        Vec3f vertex2 = p2;
+        Vec3f edge1, edge2, h, s, q;
+        float a, f, u, v;
+        edge1 = vertex1 - vertex0;
+        edge2 = vertex2 - vertex0;
+        h = cross(ray.dir, edge2);
+        a = edge1*h;
+        if (a > -EPSILON && a < EPSILON)
+            return false; // This ray is parallel to this triangle.
+        f = 1.0 / a;
+        s = ray.orig - vertex0;
+        u = f * (s * h);
+        if (u < 0.0 || u > 1.0)
+            return false;
+        q = cross(s, edge1);
+        v = f * (ray.dir * q);
+        if (v < 0.0 || u + v > 1.0)
+            return false;
+        // At this stage we can compute t to find out where the intersection point is on the line.
+        float t = f * (edge2 * q);
+        if (t > EPSILON) // ray intersection
+        {
+            t0 = t;
+            return true;
+        }
+        else { // This means that there is a line intersection but not a ray intersection.
+            return false;
+        }
+    }
 }// namespace entities
 
 
 
 
 void render(const char* out_file_path, const std::vector<entities::Sphere> &spheres, const std::vector<entities::Light> &lights,
-            const std::vector<entities::Cube> &cubes) {
+            const std::vector<entities::Cube> &cubes, const std::vector<entities::Triangle> &triangles) {
     const int   width    = 1920;
     const int   height   = 1080;
     const float fov      = M_PI/3.; ///that's a viewing angle = pi/3
     std::vector<Vec3f> framebuffer(width*height);
-    const auto amount_of_threads = std::thread::hardware_concurrency();
+    const auto amount_of_threads = 1;//std::thread::hardware_concurrency();
     std::vector<std::future<void>> tasks(amount_of_threads);
 
     size_t portion = width / amount_of_threads;
@@ -186,14 +232,14 @@ void render(const char* out_file_path, const std::vector<entities::Sphere> &sphe
         for (size_t start = 0, finish = portion, index = 0;
         index < amount_of_threads; ++index, start=finish,
         finish = index == amount_of_threads - 1 ? width : finish + portion){
-            tasks[index] = std::async(std::launch::async, [=, &spheres, &lights, &framebuffer](){
+            tasks[index] = std::async(std::launch::async, [=, &spheres, &lights, &cubes, &triangles, &framebuffer](){
                 for (size_t i = start; i < finish; i++) {
                     auto dir_x = (i + 0.5) - width / 2.;
                     auto dir_y = -(j + 0.5) + height / 2.;    // this flips the image at the same time
                     auto dir_z = -height / (2. * tan(fov / 2.));
                     framebuffer[i + j * width] = entities::casting_ray::cast_ray(entities::Ray(
                             Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z).normalize()),
-                                                          spheres, lights, cubes);
+                                                          spheres, lights, cubes, triangles);
                 }
             });
         }
