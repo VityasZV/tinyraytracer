@@ -7,7 +7,7 @@
 
 #include "raytracing/entities.h"
 
-#include <unordered_map>
+#include <unordered_map> 
 
 namespace picture {
 
@@ -46,6 +46,26 @@ struct CubeParams {
 
 class Picture {
 private:
+    void PreparingOutFileAndScene (int argc, const char** argv){
+        std::unordered_map<std::string, std::string> cmd_line_params;
+        for(int i=0; i<argc; i++)
+        {
+            std::string key(argv[i]);
+            if(key.size() > 0 && key[0]=='-')
+            {
+                if(i != argc-1) // not last argument
+                {
+                    cmd_line_params[key] = argv[i+1];
+                    i++;
+                }
+                else
+                    cmd_line_params[key] = "";
+            }
+        }   
+        if(cmd_line_params.find("-out") != cmd_line_params.end())
+            out_file_path = cmd_line_params["-out"];
+    } 
+
     std::unordered_map<MaterialName, raytracing::entities::Material> Materials {
             {MaterialName::ivory, raytracing::entities::Material(1.0, Vec4f(0.6, 0.3, 0.1, 0.0), Vec3f(0.4, 0.4, 0.3), 50.)},
             {MaterialName::glass, raytracing::entities::Material(1.5, Vec4f(0.0, 0.5, 0.1, 0.8), Vec3f(0.6, 0.7, 0.8), 125.)},
@@ -69,7 +89,9 @@ private:
             {Vec3f(-3, 0, -3), Vec3f(1, 4, -7), Materials[MaterialName::red_rubber]}
     };
 public:
-    Picture(){
+    std::string out_file_path = "out.ppm";
+    Picture(const int argc, const char** argv){
+        PreparingOutFileAndScene (argc, argv);
         for (const auto& p : spheres_params){
             spheres.emplace_back(raytracing::entities::Sphere(p.coordinates, p.radius, p.material));
         }
