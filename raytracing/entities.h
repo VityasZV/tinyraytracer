@@ -4,57 +4,136 @@
 
 #ifndef TINYRAYTRACER_ENTITIES_H
 #define TINYRAYTRACER_ENTITIES_H
-namespace raytracing {
-    namespace entities {
 
-        struct Light {
-            /// Light is a source of light
-            /// \param p - position of light source
-            /// \param i - intensity of light source
-            Light(const Vec3f &p, const float i) : position(p), intensity(i) {}
+#include "../geometry.h"
+#include <optional>
+#include <array>
 
-            Vec3f position;
-            float intensity;
-        };
+namespace raytracing::entities {
 
-        struct Material {
-            /// Material is a
-            /// \param r
-            /// \param a
-            /// \param color
-            /// \param spec
-            Material(const float r, const Vec4f &a, const Vec3f &color, const float spec) : refractive_index(r),
-                                                                                            albedo(a),
-                                                                                            diffuse_color(color),
-                                                                                            specular_exponent(spec) {}
+struct Sphere; struct Ray; struct Light; struct Cube;
+namespace casting_ray {
 
-            Material() : refractive_index(1), albedo(1, 0, 0, 0), diffuse_color(), specular_exponent() {}
+    //TODO : description
+    /// cast_ray - casts new rays for reflect, refract.
+    /// \param ray
+    /// \param spheres
+    /// \param lights
+    /// \param depth
+    /// \return
+    Vec3f cast_ray(const Ray &ray, const std::vector<Sphere> &spheres,
+                   const std::vector<Light> &lights,
+                   const std::vector<entities::Cube> &cubes, size_t depth = 0);
+}
 
-            float refractive_index;
-            Vec4f albedo;
-            Vec3f diffuse_color;
-            float specular_exponent;
-        };
+struct Light {
+    Vec3f position;
+    float intensity;
+    /// Light is a source of light
+    /// \param p - position of light source
+    /// \param i - intensity of light source
+    Light(const Vec3f &p, const float i) : position(p), intensity(i) {}
+};
 
-        struct Sphere {
-            Vec3f center;
-            float radius;
-            Material material;
+struct Ray {
+private:
+    /// sets color for ray, calling cast_ray function
+    /// \param spheres
+    /// \param lights
+    /// \param depth
+    void SetColor(const std::vector<Sphere> &spheres, const std::vector<Light> &lights,
+                  const std::vector<entities::Cube> &cubes, size_t depth){
+        color = casting_ray::cast_ray(*this, spheres, lights, cubes, depth);
+    }
 
-            /// Sphere - object that constructed by
-            /// \param c - its center
-            /// \param r - its radius
-            /// \param m - its material
-            Sphere(const Vec3f &c, const float r, const Material &m) : center(c), radius(r), material(m) {}
+public:
+    Vec3f orig, dir;       // ray orig and dir
+    Vec3f invdir;          // inverse direction
+    std::array<int, 3> sign;
+    std::optional<Vec3f> color = std::nullopt;
 
-            /// ray_intersect - checks if ray intersects sphere
-            /// \param orig - position of light
-            /// \param dir - direction of light ray
-            /// \param t0 - coordinate of intersection
-            /// \return true if ray intersects sphere, false otherwise
-            bool ray_intersect(const Vec3f &orig, const Vec3f &dir, float &t0) const;
-        };
 
-    }// namespace entities
+    /// Ray
+    /// \param orig - source of ray
+    /// \param dir - direction of ray
+    Ray(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> * const spheres_ptr = nullptr,
+            const std::vector<Light>* const lights_ptr = nullptr,
+            const std::vector<entities::Cube>* const cubes_ptr = nullptr,
+            const std::optional<size_t> depth = std::nullopt) : orig(orig), dir(dir) {
+        invdir = 1 / dir;
+        sign[0] = (invdir.x < 0);
+        sign[1] = (invdir.y < 0);
+        sign[2] = (invdir.z < 0);
+        if (depth.has_value()) {
+            SetColor(*spheres_ptr, *lights_ptr, *cubes_ptr, depth.value());
+        }
+    }
+    Ray(const Ray& r) : orig(r.orig), dir(r.dir), invdir(r.invdir), sign(r.sign), color(r.color){}
+};
+
+struct Material {
+    float refractive_index;
+    Vec4f albedo;
+    Vec3f diffuse_color;
+    float specular_exponent;
+
+    /// Material is a
+    /// \param r
+    /// \param a
+    /// \param color
+    /// \param spec
+    Material(const float r, const Vec4f &a, const Vec3f &color, const float spec) : refractive_index(r),
+                                                                                    albedo(a),
+                                                                                    diffuse_color(color),
+                                                                                    specular_exponent(spec) {}
+
+    Material() : refractive_index(1), albedo(1, 0, 0, 0), diffuse_color(), specular_exponent() {}
+};
+
+namespace {
+    struct Figure {
+        Material material;
+        Figure(const Material &m): material(m){}
+        Figure(const Figure &f): material(f.material) {}
+        virtual ~Figure() = default;
+        virtual bool ray_intersect(const Ray& ray, float &t0) const = 0;
+    };
+
+}// namespace
+
+
+
+struct Sphere : public Figure {
+    Vec3f center;
+    float radius;
+    /// Sphere - object that constructed by
+    /// \param c - its center
+    /// \param r - its radius
+    /// \param m - its material
+    Sphere(const Vec3f &c, const float r, const Material &m) : Figure(m), center(c), radius(r) {}
+    ~Sphere() = default;
+    Sphere(const Sphere &s) : Figure(s.material), center(s.center), radius(s.radius){}
+    /// ray_intersect - checks if ray intersects sphere
+    /// \param r - Ray
+    /// \param t0 - coordinate of possible intersection
+    /// \return
+    bool ray_intersect(const Ray& r, float &t0) const override;
+};
+
+struct Cube : public Figure {
+    ///To represent an axis-aligned bounding volume, all we need are two points
+    /// representing the minimum and maximum extent of the box (called bounds in the code).
+    Cube(const Vec3f &vmin, const Vec3f &vmax, const Material &m) : Figure(m){
+        bounds[0] = vmin;//левая нижняя ближняя?
+        bounds[1] = vmax;//правая верхняя дальная?
+    }
+    ~Cube() = default;
+    Cube(const Cube &c) : Figure(c.material), bounds(c.bounds){}
+    bool ray_intersect(const Ray &ray, float &t0) const override;
+    ///The bounds of the volume define a set of lines parallel to each axis
+    ///of the coordinate system which we can also expressed using the line equation.
+    std::array<Vec3f, 2> bounds;
+};
+
 }
 #endif //TINYRAYTRACER_ENTITIES_H
