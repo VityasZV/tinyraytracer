@@ -11,6 +11,7 @@ int main(int argc, const char** argv)
                   break;
           case 2: return 0;
           case 3: return 0;
+          default: throw std::runtime_error ("Incorrect scene number!");
       }
       
   }
