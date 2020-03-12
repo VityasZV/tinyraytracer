@@ -124,14 +124,21 @@ public:
     Picture(const int argc, const char** argv){
         PreparingOutFileAndScene (argc, argv);
         for (const auto& p : spheres_params){
-            spheres.emplace_back(raytracing::entities::Sphere(p.coordinates, p.radius, p.material));
+            figures.emplace_back(std::make_unique<raytracing::entities::Sphere>(p.coordinates, p.radius, p.material));
         }
         for (const auto& p : lights_params){
             lights.emplace_back(raytracing::entities::Light(p.position, p.intensity));
         }
-        const auto shift = Vec3f(5, 1, 0);
+        const auto shift1 = Vec3f(5, 1, -6);
+        const auto shift2 = Vec3f(-5, 1, -6);
+        const auto shift3 = Vec3f(15, 1, -6);
+        const auto shifts = {shift1, shift2, shift3};
         for (const auto& p : triangle_params){
-            triangles.emplace_back(raytracing::entities::Triangle(p.p0 + shift, p.p1 + shift , p.p2 + shift, p.material));
+            for (const auto& s : shifts) {
+                figures.emplace_back(
+                        std::make_unique<raytracing::entities::Triangle>(p.p0 + s, p.p1 + s, p.p2 + s,
+                                                                         p.material));
+            }
         }
 //        for (const auto& p : cubes_params){
 //            cubes.emplace_back(raytracing::entities::Cube(p.vmin, p.vmax, p.material));
@@ -142,6 +149,7 @@ public:
     std::vector<raytracing::entities::Light> lights;
     std::vector<raytracing::entities::Cube> cubes;
     std::vector<raytracing::entities::Triangle> triangles;
+    std::vector<std::unique_ptr<const raytracing::entities::Figure>> figures;
 };
 
 }// namespace picture
