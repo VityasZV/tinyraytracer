@@ -31,6 +31,13 @@ Vec3f refract(const Vec3f &I, const Vec3f &N, const float eta_t, const float eta
     return k<0 ? Vec3f(1,0,0) : I*eta + N*(eta*cosi - sqrtf(k)); // k<0 = total reflection, no ray to refract. I refract it anyways, this has no physical meaning
 }
 
+bool PointCheck(const Vec3f A,const Vec3f B,const Vec3f C,const Vec3f CheckPoint)
+{
+    Vec4f Coord=Vec4f(A.y*(B.z-C.z)+B.y*(C.z-A.z)+C.y*(A.z-B.z),A.z*(B.x-C.x)+B.z*(C.x-A.x)+C.z*(A.x-B.x),A.x*(B.y-C.y)+B.x*(C.y-A.y)+C.x*(A.y-B.y),-(A.x*(B.y*C.z-C.y*B.z)+B.x*(C.y*A.z-A.y*C.z)+C.x*(A.y*B.z-B.y*A.z)));
+    return Coord.x * CheckPoint.x + Coord.y * CheckPoint.y + Coord.z * CheckPoint.z + Coord.w == 0;
+}
+
+
 bool scene_intersect(const raytracing::entities::Ray& ray, const std::vector<raytracing::entities::Sphere> &spheres,
                      const std::vector<raytracing::entities::Cube> &cubes, const std::vector<raytracing::entities::Triangle> &triangles,
                      Vec3f &hit, Vec3f &N, raytracing::entities::Material &material) {
@@ -59,11 +66,54 @@ bool scene_intersect(const raytracing::entities::Ray& ray, const std::vector<ray
     float cubes_dist = std::numeric_limits<float>::max();
     for (size_t i=0; i < cubes.size(); i++) {
         float dist_i;
+        std::vector <float> Coords ={cubes[i].bounds[0].x,cubes[i].bounds[1].x,cubes[i].bounds[0].y,cubes[i].bounds[1].y,cubes[i].bounds[0].z,cubes[i].bounds[1].z};
+        float LenD=sqrt(std::pow(Coords[0]-Coords[1],2) + std::pow(Coords[2]-Coords[3],2) + std::pow(Coords[4]-Coords[5],2));
+        std::vector <Vec3f> CubePoint = {cubes[i].bounds[0]+Vec3f(0,LenD/sqrt(3),0), cubes[i].bounds[1]+Vec3f(-LenD/sqrt(3),0,0) ,
+                                         cubes[i].bounds[1], cubes[i].bounds[1]+Vec3f(0,0,-LenD/sqrt(3)), cubes[i].bounds[0],
+                                         cubes[i].bounds[0]+Vec3f(0,0,LenD/sqrt(3)),
+                                         cubes[i].bounds[1]+Vec3f(0,-LenD/sqrt(3),0),cubes[i].bounds[0]+Vec3f(LenD/sqrt(3),0,0)};
+
         if (cubes[i].ray_intersect(ray, dist_i) && dist_i < cubes_dist) {
             cubes_dist = dist_i;
             hit = ray.orig + ray.dir * dist_i;
-            // TODO вот от N зависит цвет проекции походу каждой
-            N = (hit - cubes[i].bounds[0]).normalize();
+            Vec3f Vec10 = (CubePoint[0]-CubePoint[1]).normalize();
+            Vec3f Vec12 = (CubePoint[2]-CubePoint[1]).normalize();
+            Vec3f Vec15 = (CubePoint[5]-CubePoint[1]).normalize();
+            Vec3f Vec74 = (CubePoint[4]-CubePoint[7]).normalize();
+            Vec3f Vec76 = (CubePoint[6]-CubePoint[7]).normalize();
+            Vec3f Vec73 = (CubePoint[3]-CubePoint[7]).normalize();
+
+            if (PointCheck(CubePoint[0],CubePoint[1],CubePoint[2],hit))
+                N=cross(Vec10,Vec12);
+            if (PointCheck(CubePoint[0],CubePoint[1],CubePoint[5],hit))
+                N=cross(Vec10,Vec12);
+            if (PointCheck(CubePoint[1],CubePoint[2],CubePoint[5],hit))
+                N=cross(Vec12,Vec15);
+            if (PointCheck(CubePoint[2],CubePoint[3],CubePoint[6],hit))
+                N=cross(Vec73,Vec76);
+            if (PointCheck(CubePoint[0],CubePoint[3],CubePoint[4],hit))
+                N=cross(Vec73,Vec74);
+            if (PointCheck(CubePoint[4],CubePoint[5],CubePoint[6],hit))
+                N=cross(Vec74,Vec76);
+
+            //XMinCord=cubes[i].bounds[1].x;
+
+//            std::cout << hit << std::endl;
+//            N=Vec3f(0,0,0);
+//            if (int(hit.x) == cubes[i].bounds[0].x)
+//                N=Vec3f(0,-1,0);
+//            if (int(hit.x) == cubes[i].bounds[1].x)
+//                N=Vec3f(0,1,0);
+//            if (int(hit.y) == cubes[i].bounds[0].y)
+//                N=Vec3f(0,0,-1);
+//            if (int(hit.y) == cubes[i].bounds[1].y)
+//                N=Vec3f(0,0,1);
+//            if (int(hit.z) == cubes[i].bounds[0].z)
+//                N=Vec3f(-1,0,0);
+//            if (int(hit.z) == cubes[i].bounds[1].z)
+//                N=Vec3f(1,0,0);
+//             TODO вот от N зависит цвет проекции походу каждой
+//            N = (hit - cubes[i].bounds[0]).normalize();
             material = cubes[i].material;
         }
     }
@@ -151,9 +201,12 @@ namespace entities{
         t_max = (bounds[1 - ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
         t_y_min = (bounds[ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
         t_y_max = (bounds[1 - ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
-
+//        t_z_min = (bounds[ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
+//        t_z_max = (bounds[1-ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
         if ((t_min > t_y_max) || (t_y_min > t_max))
             return false;
+//        if ((t_y_min > t_z_max) || (t_z_min > t_y_max))
+//            return false;
         if (t_y_min > t_min)
             t_min = t_y_min;
         if (t_y_max < t_max)

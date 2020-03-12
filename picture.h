@@ -130,9 +130,9 @@ public:
         for (const auto& p : triangle_params){
             triangles.emplace_back(raytracing::entities::Triangle(p.p0 + shift, p.p1 + shift , p.p2 + shift, p.material));
         }
-//        for (const auto& p : cubes_params){
-//            cubes.emplace_back(raytracing::entities::Cube(p.vmin, p.vmax, p.material));
-//        }
+        for (const auto& p : cubes_params){
+            cubes.emplace_back(raytracing::entities::Cube(p.vmin, p.vmax, p.material));
+        }
     }
     ~Picture() = default;
     std::vector<raytracing::entities::Sphere> spheres;
