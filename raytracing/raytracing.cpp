@@ -195,40 +195,40 @@ namespace entities{
     //TODO needs testing
     bool Cube::ray_intersect(const Ray &ray, float &t0) const {
         float t_min, t_max, t_y_min, t_y_max, t_z_min, t_z_max;
-
-        t_min = (bounds[ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
-        t_max = (bounds[1 - ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
-        t_y_min = (bounds[ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
-        t_y_max = (bounds[1 - ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
+        if (ray.sign[0]==0 and ray.orig
+//        t_min = (bounds[ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
+//        t_max = (bounds[1 - ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
+//        t_y_min = (bounds[ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
+//        t_y_max = (bounds[1 - ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
 //        t_z_min = (bounds[ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
 //        t_z_max = (bounds[1-ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
-        if ((t_min > t_y_max) || (t_y_min > t_max))
-            return false;
+//        if ((t_min > t_y_max) || (t_y_min > t_max))
+//            return false;
 //        if ((t_y_min > t_z_max) || (t_z_min > t_y_max))
 //            return false;
-        if (t_y_min > t_min)
-            t_min = t_y_min;
-        if (t_y_max < t_max)
-            t_max = t_y_max;
-
-        t_z_min = (bounds[ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
-        t_z_max = (bounds[1 - ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
-
-        if ((t_min > t_z_max) || (t_z_min > t_max))
-            return false;
-        if (t_z_min > t_min)
-            t_min = t_z_min;
-        if (t_z_max < t_max)
-            t_max = t_z_max;
-
-        t0 = t_min;
-
-        if (t0 < 0) {
-            t0 = t_max;
-            if (t0 < 0) return false;
-        }
-
-        return true;
+//        if (t_y_min > t_min)
+//            t_min = t_y_min;
+//        if (t_y_max < t_max)
+//            t_max = t_y_max;
+//
+//        t_z_min = (bounds[ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
+//        t_z_max = (bounds[1 - ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
+//
+//        if ((t_min > t_z_max) || (t_z_min > t_max))
+//            return false;
+//        if (t_z_min > t_min)
+//            t_min = t_z_min;
+//        if (t_z_max < t_max)
+//            t_max = t_z_max;
+//
+//        t0 = t_min;
+//
+//        if (t0 < 0) {
+//            t0 = t_max;
+//            if (t0 < 0) return false;
+//        }
+//
+//        return true;
     }
 
     bool Triangle::ray_intersect(const Ray &ray, float &t0) const {
