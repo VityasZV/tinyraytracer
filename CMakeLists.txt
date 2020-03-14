@@ -26,5 +26,5 @@ enable_cxx_compiler_flag_if_supported("-O3")
 
 file(GLOB SOURCES *.h *.cpp)
 
-add_executable(${PROJECT_NAME} ${SOURCES} raytracing/raytracing.cpp)
+add_executable(${PROJECT_NAME} ${SOURCES} raytracing/raytracing.cpp picture/picture.cpp)
 
