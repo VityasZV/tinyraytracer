@@ -74,6 +74,13 @@ struct vec<3, T> {
         return *this;
     }
 
+    vec<3, T> &operator/(const T &r) {
+        x = x / r;
+        y = y / r;
+        z = z / r;
+        return *this;
+    }
+
     friend vec<3, T> operator/(const T &r, const vec<3, T> &v) { return vec<3, T>(r / v.x, r / v.y, r / v.z); }
 
     T x, y, z;

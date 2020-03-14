@@ -31,6 +31,8 @@ picture::Picture::Picture(const int argc, const char **argv) {
     triangle_params.clear();
     //here comes the duck
     MakeTriangleMash("../duck.obj");
+    //here comes the deer
+    MakeTriangleMash("../deer.obj");
 }
 
 void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
@@ -53,6 +55,7 @@ void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
 }
 
 void picture::Picture::MakeTriangleMash(const char *file_name) {
+    auto shift_deer = Vec3f(-5, -4, -8);
     auto figure_material = Materials[MaterialName::red_rubber];
     std::vector<Vec3f> verticels;
     std::vector<Vec2f> uvIndices;
@@ -72,21 +75,34 @@ void picture::Picture::MakeTriangleMash(const char *file_name) {
             iss >> trash;
             Vec3f v;
             for (int i = 0; i < 3; i++) iss >> v[i];
-            verticels.push_back(v);
-        } else if (!line.compare(0, 2, "vt")) {
-            iss >> trash;
-            Vec2f v;
-            for (int i = 0; i < 2; ++i) iss >> v[i];
-            uvIndices.push_back(v);
-        } else if (!line.compare(0, 2, "f ")) {
-            Vec3i f;
-            int idx, cnt = 0;
-            iss >> trash;
-            while (iss >> idx) {
-                idx--; // in wavefront obj all indices start at 1, not zero
-                f[cnt++] = idx;
+            if (strncmp(file_name, "../deer.obj", 11) == 0) {
+                verticels.push_back(v / 200. + shift_deer);
+            } else {
+                verticels.push_back(v);
             }
-            if (3 == cnt) faces.push_back(f);
+        } else if (!line.compare(0, 2, "vt")) {
+            continue;
+        } else if (!line.compare(0, 2, "f ")) {
+            if (std::string(file_name) == std::string("../duck.obj")) {
+                Vec3i f;
+                int idx, cnt = 0;
+                iss >> trash;
+                while (iss >> idx) {
+                    idx--; // in wavefront obj all indices start at 1, not zero
+                    f[cnt++] = idx;
+                }
+                if (3 == cnt) faces.push_back(f);
+            } else {
+                Vec3i f;
+                int idx, cnt = 0;
+                iss >> trash;
+                while (iss >> idx) {
+                    idx--; // in wavefront obj all indices start at 1, not zero
+                    f[cnt++] = idx;
+                    while (iss.get() != ' ') {}
+                }
+                if (3 == cnt) faces.push_back(f);
+            }
         }
     }
     for (const auto &face : faces) {
