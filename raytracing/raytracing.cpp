@@ -204,9 +204,10 @@ void render(const char *out_file_path, const std::vector<std::unique_ptr<const e
             const std::vector<entities::Light> &lights) {
     const int width = 1920;
     const int height = 1080;
-    const float fov = M_PI / 3.; ///that's a viewing angle = pi/3
+    const float fov = M_PI / 3.0; ///that's a viewing angle = pi/3
     std::vector<Vec3f> framebuffer(width * height);
-    const auto amount_of_threads = std::thread::hardware_concurrency();
+    const auto amount_of_threads =
+            8 * std::thread::hardware_concurrency(); //because of asynchronius tasks we can make it a bit bigger
     std::vector<std::future<void>> tasks(amount_of_threads);
 
     size_t portion = width / amount_of_threads;
