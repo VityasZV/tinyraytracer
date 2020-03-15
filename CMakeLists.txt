@@ -1,6 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
 project (raytracer)
-
 include(CheckCXXCompilerFlag)
 
 function(enable_cxx_compiler_flag_if_supported flag)
@@ -25,6 +24,6 @@ enable_cxx_compiler_flag_if_supported("-O3")
 
 
 file(GLOB SOURCES *.h *.cpp)
-
-add_executable(${PROJECT_NAME} ${SOURCES} raytracing/raytracing.cpp picture/picture.cpp)
+# STB
+add_executable(${PROJECT_NAME} ${SOURCES} raytracing/raytracing.cpp stb_image.h stb_image_write.h picture/picture.cpp)
 

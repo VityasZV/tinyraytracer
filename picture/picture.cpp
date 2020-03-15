@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <future>
+#include <string.h>
 
 picture::Picture::Picture(const int argc, const char **argv) {
     PreparingOutFileAndScene(argc, argv);
@@ -29,10 +30,10 @@ picture::Picture::Picture(const int argc, const char **argv) {
         }
     }
     triangle_params.clear();
-    //here comes the duck
-    MakeTriangleMash("../duck.obj");
-    //here comes the deer
-    MakeTriangleMash("../deer.obj");
+    //here comes the duck!
+//    MakeTriangleMash("../duck.obj");
+    //here comes the deer!
+//    MakeTriangleMash("../deer.obj");
 }
 
 void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
@@ -54,62 +55,62 @@ void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
         scene_id = atoi(cmd_line_params["-scene"].c_str());
 }
 
-void picture::Picture::MakeTriangleMash(const char *file_name) {
-    auto shift_deer = Vec3f(-5, -4, -8);
-    auto figure_material = Materials[MaterialName::red_rubber];
-    std::vector<Vec3f> verticels;
-    std::vector<Vec2f> uvIndices;
-    std::vector<Vec3i> faces;
-    std::ifstream in(file_name, std::ifstream::in);
-    if (in.fail()) {
-        std::stringstream error;
-        error << "Failed to open " << file_name;
-        throw std::runtime_error(error.str());
-    }
-    std::string line;
-    while (!in.eof()) {
-        std::getline(in, line);
-        std::istringstream iss(line.c_str());
-        char trash;
-        if (!line.compare(0, 2, "v ")) {
-            iss >> trash;
-            Vec3f v;
-            for (int i = 0; i < 3; ++i) iss >> v[i];
-            if (strncmp(file_name, "../deer.obj", 11) == 0) {
-                verticels.push_back(v / 200. + shift_deer);
-            } else {
-                verticels.push_back(v);
-            }
-        } else if (!line.compare(0, 2, "vt")) {
-            continue;
-        } else if (!line.compare(0, 2, "f ")) {
-            if (std::string(file_name) == std::string("../duck.obj")) {
-                Vec3i f;
-                int idx, cnt = 0;
-                iss >> trash;
-                while (iss >> idx) {
-                    --idx; // in wavefront obj all indices start at 1, not zero
-                    f[cnt++] = idx;
-                }
-                if (3 == cnt) faces.push_back(f);
-            } else {
-                Vec3i f;
-                int idx, cnt = 0;
-                iss >> trash;
-                while (iss >> idx) {
-                    --idx; // in wavefront obj all indices start at 1, not zero
-                    f[cnt++] = idx;
-                    while (iss.get() != ' ') {}
-                }
-                if (3 == cnt) faces.push_back(f);
-            }
-        }
-    }
-    for (const auto &face : faces) {
-        figures.emplace_back(std::make_unique<raytracing::entities::Triangle>(verticels[face.x], verticels[face.y],
-                                                                              verticels[face.z], figure_material));
-    }
-
-}
+//void picture::Picture::MakeTriangleMash(const char *file_name) {
+//    auto shift_deer = Vec3f(-5, -4, -8);
+//    auto figure_material = Materials[MaterialName::red_rubber];
+//    std::vector<Vec3f> verticels;
+//    std::vector<Vec2f> uvIndices;
+//    std::vector<Vec3i> faces;
+//    std::ifstream in(file_name, std::ifstream::in);
+//    if (in.fail()) {
+//        std::stringstream error;
+//        error << "Failed to open " << file_name;
+//        throw std::runtime_error(error.str());
+//    }
+//    std::string line;
+//    while (!in.eof()) {
+//        std::getline(in, line);
+//        std::istringstream iss(line.c_str());
+//        char trash;
+//        if (!line.compare(0, 2, "v ")) {
+//            iss >> trash;
+//            Vec3f v;
+//            for (int i = 0; i < 3; ++i) iss >> v[i];
+//            if (strncmp(file_name, "../deer.obj", 11) == 0) {
+//                verticels.push_back(v / 200. + shift_deer);
+//            } else {
+//                verticels.push_back(v);
+//            }
+//        } else if (!line.compare(0, 2, "vt")) {
+//            continue;
+//        } else if (!line.compare(0, 2, "f ")) {
+//            if (std::string(file_name) == std::string("../duck.obj")) {
+//                Vec3i f;
+//                int idx, cnt = 0;
+//                iss >> trash;
+//                while (iss >> idx) {
+//                    --idx; // in wavefront obj all indices start at 1, not zero
+//                    f[cnt++] = idx;
+//                }
+//                if (3 == cnt) faces.push_back(f);
+//            } else {
+//                Vec3i f;
+//                int idx, cnt = 0;
+//                iss >> trash;
+//                while (iss >> idx) {
+//                    --idx; // in wavefront obj all indices start at 1, not zero
+//                    f[cnt++] = idx;
+//                    while (iss.get() != ' ') {}
+//                }
+//                if (3 == cnt) faces.push_back(f);
+//            }
+//        }
+//    }
+//    for (const auto &face : faces) {
+//        figures.emplace_back(std::make_unique<raytracing::entities::Triangle>(verticels[face.x], verticels[face.y],
+//                                                                              verticels[face.z], figure_material));
+//    }
+//
+//}
 
 

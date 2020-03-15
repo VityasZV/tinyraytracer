@@ -1,0 +1,62 @@
+
+*** These modified files were found in JOE when it aborted on Sun Mar 15 23:41:06 2020
+*** JOE was aborted because the terminal closed
+
+*** Файл '/home/voland/WorkSpace/OurGraph/tinyraytracer/.git/COMMIT_EDITMSG'
+Some env data
+
+*** Файл '(БезИмени)'
+x
+
+*** Файл '(БезИмени)'
+x
+x
+
+*** Файл '(БезИмени)'
+murmur.py
+murmur.py
+/home/voland/WorkSpace/OurGraph/tinyraytracer/.git/COMMIT_EDITMSG
+
+*** Файл '* Startup Log *'
+Обработка '/etc/joe/editorrc'...Обработка '/etc/joe/ftyperc'...Finished processing /etc/joe/ftyperc
+Finished processing /etc/joe/editorrc
+
+*** These modified files were found in JOE when it aborted on Sun Mar 15 23:41:39 2020
+*** JOE was aborted because the terminal closed
+
+*** Файл '/home/voland/WorkSpace/OurGraph/tinyraytracer/.git/COMMIT_EDITMSG'
+:wq
+:q!
+
+# Пожалуйста, введите сообщение коммита для ваших изменений. Строки,
+# начинающиеся с «#» будут проигнорированы, а пустое сообщение
+# отменяет процесс коммита.
+#
+# На ветке env
+# Ваша ветка обновлена в соответствии с «origin/env».
+#
+# Изменения, которые будут включены в коммит:
+#	изменено:      CMakeLists.txt
+#	новый файл:    DEADJOE
+#	изменено:      picture/picture.cpp
+#	изменено:      raytracing/entities.h
+#	изменено:      raytracing/raytracing.cpp
+#	новый файл:    stb_image.h
+#	новый файл:    stb_image_write.h
+#
+
+*** Файл '(БезИмени)'
+x
+
+*** Файл '(БезИмени)'
+x
+x
+
+*** Файл '(БезИмени)'
+murmur.py
+murmur.py
+/home/voland/WorkSpace/OurGraph/tinyraytracer/.git/COMMIT_EDITMSG
+
+*** Файл '* Startup Log *'
+Обработка '/etc/joe/editorrc'...Обработка '/etc/joe/ftyperc'...Finished processing /etc/joe/ftyperc
+Finished processing /etc/joe/editorrc

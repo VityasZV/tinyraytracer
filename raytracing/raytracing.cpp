@@ -6,6 +6,10 @@
 #include <fstream>
 #include <algorithm>
 #include <future>
+//#define STB_IMAGE_WRITE_IMPLEMENTATION
+//#include "stb_image_write.h"
+//#define STB_IMAGE_IMPLEMENTATION
+//#include "stb_image.h"
 
 //TODO : description
 /// reflect
@@ -77,8 +81,10 @@ Vec3f casting_ray::cast_ray(const Ray &ray,
     Vec3f point, N;
     Material material;
 
-    if (depth > 4 || !scene_intersect(ray, figures, point, N, material)) {
-        return Vec3f(0, float(127.0 / 255), float(255.0 / 255)); // background color
+    if (depth>4 || !scene_intersect(orig, dir, spheres, point, N, material)) {
+        int a = std::max(0, std::min(envmap_width -1, static_cast<int>((atan2(dir.z, dir.x)/(2*M_PI) + .5)*envmap_width)));
+        int b = std::max(0, std::min(envmap_height-1, static_cast<int>(acos(dir.y)/M_PI*envmap_height)));
+        return envmap[a+b*envmap_width]; // background color
     }
 
     ///TODO make just 2 variables
@@ -204,6 +210,19 @@ void render(const char *out_file_path, const std::vector<std::unique_ptr<const e
             const std::vector<entities::Light> &lights) {
     const int width = 1920;
     const int height = 1080;
+    int n = -1;
+    unsigned char *pixmap = stbi_load("../envmap.jpg", &envmap_width, &envmap_height, &n, 0);
+    if (!pixmap || 3!=n) {
+        std::cerr << "Error: can not load the environment map" << std::endl;
+        return -1;
+    }
+    envmap = std::vector<Vec3f>(envmap_width*envmap_height);
+    for (int j = envmap_height-1; j>=0 ; j--) {
+        for (int i = 0; i<envmap_width; i++) {
+            envmap[i+j*envmap_width] = Vec3f(pixmap[(i+j*envmap_width)*3+0], pixmap[(i+j*envmap_width)*3+1], pixmap[(i+j*envmap_width)*3+2])*(1/255.);
+        }
+    }
+    stbi_image_free(pixmap);
     const float fov = M_PI / 3.0; ///that's a viewing angle = pi/3
     std::vector<Vec3f> framebuffer(width * height);
     const auto amount_of_threads = std::thread::hardware_concurrency(); //because of asynchronius tasks we can make it a bit bigger
@@ -226,9 +245,11 @@ void render(const char *out_file_path, const std::vector<std::unique_ptr<const e
         task.get();
     }
 
-    std::ofstream ofs; // save the framebuffer to file
-    ofs.open(out_file_path, std::ios::binary);
-    ofs << "P6\n" << width << " " << height << "\n255\n";
+
+//    std::ofstream ofs; // save the framebuffer to file
+//    ofs.open(out_file_path, std::ios::binary);
+//    ofs << "P6\n" << width << " " << height << "\n255\n";
+
     for (size_t i = 0; i < height * width; ++i) {
         Vec3f &c = framebuffer[i];
         float max = std::max(c[0], std::max(c[1], c[2]));
@@ -237,7 +258,7 @@ void render(const char *out_file_path, const std::vector<std::unique_ptr<const e
             ofs << (char) (255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
         }
     }
-    ofs.close();
+//    ofs.close();
 }
 
 }// namespace raytracing
