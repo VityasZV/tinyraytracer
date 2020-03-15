@@ -37,13 +37,13 @@ picture::Picture::Picture(const int argc, const char **argv) {
 
 void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
     std::unordered_map<std::string, std::string> cmd_line_params;
-    for (int i = 0; i < argc; i++) {
+    for (int i = 0; i < argc; ++i) {
         std::string key(argv[i]);
         if (key.size() > 0 && key[0] == '-') {
             if (i != argc - 1) // not last argument
             {
                 cmd_line_params[key] = argv[i + 1];
-                i++;
+                ++i;
             } else
                 cmd_line_params[key] = "";
         }
@@ -74,7 +74,7 @@ void picture::Picture::MakeTriangleMash(const char *file_name) {
         if (!line.compare(0, 2, "v ")) {
             iss >> trash;
             Vec3f v;
-            for (int i = 0; i < 3; i++) iss >> v[i];
+            for (int i = 0; i < 3; ++i) iss >> v[i];
             if (strncmp(file_name, "../deer.obj", 11) == 0) {
                 verticels.push_back(v / 200. + shift_deer);
             } else {
@@ -88,7 +88,7 @@ void picture::Picture::MakeTriangleMash(const char *file_name) {
                 int idx, cnt = 0;
                 iss >> trash;
                 while (iss >> idx) {
-                    idx--; // in wavefront obj all indices start at 1, not zero
+                    --idx; // in wavefront obj all indices start at 1, not zero
                     f[cnt++] = idx;
                 }
                 if (3 == cnt) faces.push_back(f);
@@ -97,7 +97,7 @@ void picture::Picture::MakeTriangleMash(const char *file_name) {
                 int idx, cnt = 0;
                 iss >> trash;
                 while (iss >> idx) {
-                    idx--; // in wavefront obj all indices start at 1, not zero
+                    --idx; // in wavefront obj all indices start at 1, not zero
                     f[cnt++] = idx;
                     while (iss.get() != ' ') {}
                 }
