@@ -1,9 +1,15 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include "picture/picture.h"
 #include "raytracing/raytracing.h"
 #include <memory>
 
+
 int main(int argc, const char **argv) {
     try {
+        int n = -1;
+        int envmap_width, env_height;
+        unsigned char *pixmap = stbi_load("envmap.jpg", &envmap_width, &env_height, &n, 0);
         picture::Picture my_pic(argc, argv);
         switch (my_pic.scene_id) {
             case 1:
