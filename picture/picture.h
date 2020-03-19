@@ -59,6 +59,8 @@ struct TriangleParams {
 
 class Picture {
 private:
+    std::vector<SphereParams> spheres_params;
+    std::vector<TriangleParams> triangle_params;
     void PreparingOutFileAndScene(int argc, const char **argv);
 
     std::unordered_map<MaterialName, raytracing::entities::Material> Materials{
@@ -71,14 +73,6 @@ private:
             {MaterialName::mirror,     raytracing::entities::Material(1.0, Vec4f(0.0, 10.0, 0.8, 0.0),
                                                                       Vec3f(1.0, 1.0, 1.0), 1425.)}
     };
-    std::vector<SphereParams> spheres_params{
-            {Vec3f(-3, 0, -16),      2, Materials[MaterialName::ivory]},
-            {Vec3f(-1.0, -1.5, -12), 2, Materials[MaterialName::glass]},
-            {Vec3f(1.5, -0.5, -18),  3, Materials[MaterialName::red_rubber]},
-            {Vec3f(7, 5, -18),       4, Materials[MaterialName::mirror]},
-            {Vec3f(-8, 5, -18),      4, Materials[MaterialName::mirror]}
-
-    };
 
     std::vector<LightParams> lights_params{
             {Vec3f(-20, 20, 20), 1.5},
@@ -87,41 +81,20 @@ private:
     };
 
     std::vector<CubeParams> cubes_params{
-            {Vec3f(-3, 0, -3), Vec3f(1, 4, -7), Materials[MaterialName::red_rubber]}
-    };
-    std::vector<TriangleParams> triangle_params{
-            //dont forget about right trio while adding params!!!
-            //front
-            {Vec3f(-6, 0, -6), Vec3f(-5, 0, -6), Vec3f(-5, 2, -6), Materials[MaterialName::red_rubber]},
-            {Vec3f(-5, 2, -6), Vec3f(-6, 2, -6), Vec3f(-6, 0, -6), Materials[MaterialName::red_rubber]},
-            //down
-            {Vec3f(-5, 0, -6), Vec3f(-6, 0, -6), Vec3f(-5, 0, -8), Materials[MaterialName::red_rubber]},
-            {Vec3f(-5, 0, -8), Vec3f(-6, 0, -6), Vec3f(-6, 0, -8), Materials[MaterialName::red_rubber]},
-            //up
-            {Vec3f(-6, 2, -6), Vec3f(-5, 2, -6), Vec3f(-5, 2, -8), Materials[MaterialName::red_rubber]},
-            {Vec3f(-5, 2, -8), Vec3f(-6, 2, -8), Vec3f(-6, 2, -6), Materials[MaterialName::red_rubber]},
-            //left
-            {Vec3f(-6, 2, -8), Vec3f(-6, 2, -6), Vec3f(-6, 0, -6), Materials[MaterialName::red_rubber]},
-            {Vec3f(-6, 0, -8), Vec3f(-6, 2, -8), Vec3f(-6, 0, -6), Materials[MaterialName::red_rubber]},
-            //right
-            {Vec3f(-5, 0, -8), Vec3f(-5, 2, -8), Vec3f(-5, 2, -6), Materials[MaterialName::red_rubber]},
-            {Vec3f(-5, 0, -8), Vec3f(-5, 2, -6), Vec3f(-5, 0, -6), Materials[MaterialName::red_rubber]},
-
+            {Vec3f(-3, 0, -3), Vec3f(1, 4, -7), Materials[MaterialName::mirror]}
     };
 
     void MakeTriangleMash(const char *file_name);
 
 public:
-    std::string out_file_path = "out.ppm";
-    int scene_id = 1;
+    std::string out_file_path = "Result.jpg";
+    static int scene_id;
 
     Picture(const int argc, const char **argv);
-
     ~Picture() = default;
 
     std::vector<raytracing::entities::Light> lights;
     std::vector<std::unique_ptr<const raytracing::entities::Figure>> figures;
 };
-
 }// namespace picture
 #endif //RAYTRACER_PICTURE_H
