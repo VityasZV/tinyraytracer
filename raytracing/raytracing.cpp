@@ -6,6 +6,7 @@
 #include <fstream>
 #include <algorithm>
 #include <future>
+#include <memory>
 
 //TODO : description
 /// reflect
@@ -198,6 +199,31 @@ bool Triangle::ray_intersect(const Ray &ray, float &t0) const {
 }// namespace entities
 
 
+Vec3f anti_aliasing (double dir_x, double dir_y, double dir_z, 
+                     const std::vector<std::unique_ptr<const entities::Figure>> &figures,
+                     const std::vector<entities::Light> &lights){
+    Vec3f anti_alias = Vec3f(0, 0, 0);
+    for (int k = 0; k < 5; ++k){
+        switch (k % 4) {
+            case 0: anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
+                                Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z).normalize()), figures, lights);
+                    break;
+            case 1: anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
+                                Vec3f(0, 0, 0), Vec3f(dir_x + 0.5, dir_y, dir_z).normalize()), figures, lights);
+                    break;
+            case 2: anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
+                                Vec3f(0, 0, 0), Vec3f(dir_x, dir_y + 0.5, dir_z).normalize()), figures, lights);
+                    break;
+            case 3: anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
+                                Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z + 0.5).normalize()), figures, lights);
+                    break;
+            default: anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
+                                Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z - 0.5).normalize()), figures, lights);
+                    break;
+        }
+    }
+    return (anti_alias / 5);             
+}
 
 
 void render(const char *out_file_path, const std::vector<std::unique_ptr<const entities::Figure>> &figures,
@@ -216,8 +242,7 @@ void render(const char *out_file_path, const std::vector<std::unique_ptr<const e
                    auto dir_x = (i + 0.5) - width / 2.;
                    auto dir_y = -(j + 0.5) + height / 2.;    // this flips the image at the same time
                    auto dir_z = -height / (2. * tan(fov / 2.));
-                   framebuffer[i + j * width] = entities::casting_ray::cast_ray(entities::Ray(
-                            Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z).normalize()), figures, lights);
+                   framebuffer[i + j * width] = raytracing::anti_aliasing(dir_x, dir_y, dir_z, figures, lights);
                }
            }
         });

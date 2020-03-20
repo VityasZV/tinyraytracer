@@ -4,9 +4,11 @@
 
 #include "picture.h"
 
+#include <memory>
 #include <fstream>
 #include <sstream>
 #include <future>
+#include <cstring>
 
 picture::Picture::Picture(const int argc, const char **argv) {
     PreparingOutFileAndScene(argc, argv);
@@ -30,9 +32,9 @@ picture::Picture::Picture(const int argc, const char **argv) {
     }
     triangle_params.clear();
     //here comes the duck
-    MakeTriangleMash("../duck.obj");
+    //MakeTriangleMash("../duck.obj");
     //here comes the deer
-    MakeTriangleMash("../deer.obj");
+    //MakeTriangleMash("../deer.obj");
 }
 
 void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {

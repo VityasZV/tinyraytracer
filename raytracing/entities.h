@@ -8,6 +8,7 @@
 #include "../geometry.h"
 #include <optional>
 #include <array>
+#include <memory>
 
 namespace raytracing::entities {
 enum class FigureName{

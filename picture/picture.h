@@ -8,6 +8,7 @@
 #include "../raytracing/entities.h"
 
 #include <unordered_map>
+#include <memory>
 
 namespace picture {
 
