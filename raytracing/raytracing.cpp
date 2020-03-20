@@ -204,7 +204,7 @@ Vec3f anti_aliasing (double dir_x, double dir_y, double dir_z,
                      const std::vector<entities::Light> &lights){
     Vec3f anti_alias = Vec3f(0, 0, 0);
     for (int k = 0; k < 5; ++k){
-        switch (k % 4) {
+        switch (k % 5) {
             case 0: anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
                                 Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z).normalize()), figures, lights);
                     break;
