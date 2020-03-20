@@ -3,6 +3,7 @@
 
 #include "../geometry.h"
 #include "entities.h"
+#include <memory>
 namespace raytracing {
 
 /// render - function for filling image with blue color, also for adding spheres and lights to

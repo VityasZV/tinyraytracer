@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <future>
+#include <cstring>
 
 picture::Picture::Picture(const int argc, const char **argv) {
     PreparingOutFileAndScene(argc, argv);
