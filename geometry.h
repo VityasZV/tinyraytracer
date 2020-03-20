@@ -5,7 +5,6 @@
 #include <vector>
 #include <cassert>
 #include <iostream>
-#include <memory>
 
 template<size_t DIM, typename T>
 struct vec {
