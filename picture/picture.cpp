@@ -34,6 +34,8 @@ picture::Picture::Picture(const int argc, const char **argv) {
     MakeTriangleMash("../duck.obj");
     //here comes the deer
     MakeTriangleMash("../deer.obj");
+    std::cout << "Всего примитивов " << figures.size() << std::endl;
+    FormKdTree();
 }
 
 void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
@@ -111,6 +113,21 @@ void picture::Picture::MakeTriangleMash(const char *file_name) {
                                                                               verticels[face.z], figure_material));
     }
 
+}
+
+void picture::Picture::FormKdTree() {
+    raytracing::entities::AABB space(Vec3f(-30, -16, -5), Vec3f(30, 16, -30)); //initial coube
+    //DONE
+    //пихать в figures_in_tree_root нужно не внешний куб, а куб для каждого блять примитива на хуй -- done
+    std::vector<std::shared_ptr<raytracing::kd_tree::KdTree::RenderWrapper>> figures_in_tree_root;
+    for (auto &figure : figures) {
+        auto bounding_box = figure->GetAABB();
+        figures_in_tree_root.push_back(
+                std::make_shared<raytracing::kd_tree::KdTree::RenderWrapper>(std::move(figure), bounding_box));
+    }
+    figures.clear();
+    kd_tree = raytracing::kd_tree::KdTree::build(figures_in_tree_root, space, 0);
+    std::cout << "finish" << std::endl;
 }
 
 

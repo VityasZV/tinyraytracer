@@ -6,6 +6,7 @@
 #define RAYTRACER_PICTURE_H
 
 #include "../raytracing/entities.h"
+#include "../kd-tree/kdtree.h"
 
 #include <unordered_map>
 #include <memory>
@@ -76,7 +77,8 @@ private:
             {Vec3f(-1.0, -1.5, -12), 2, Materials[MaterialName::glass]},
             {Vec3f(1.5, -0.5, -18),  3, Materials[MaterialName::red_rubber]},
             {Vec3f(7, 5, -18),       4, Materials[MaterialName::mirror]},
-            {Vec3f(-8, 5, -18),      4, Materials[MaterialName::mirror]}
+            {Vec3f(-8, 5, -18),      4, Materials[MaterialName::mirror]},
+
 
     };
 
@@ -106,14 +108,18 @@ private:
             //right
             {Vec3f(-5, 0, -8), Vec3f(-5, 2, -8), Vec3f(-5, 2, -6), Materials[MaterialName::red_rubber]},
             {Vec3f(-5, 0, -8), Vec3f(-5, 2, -6), Vec3f(-5, 0, -6), Materials[MaterialName::red_rubber]},
+            //FIXME добавте треугольники для задней стороны, я забыл
 
     };
 
     void MakeTriangleMash(const char *file_name);
 
+    void FormKdTree();
+
 public:
     std::string out_file_path = "out.ppm";
     int scene_id = 1;
+
 
     Picture(const int argc, const char **argv);
 
@@ -121,6 +127,7 @@ public:
 
     std::vector<raytracing::entities::Light> lights;
     std::vector<std::unique_ptr<const raytracing::entities::Figure>> figures;
+    std::shared_ptr<raytracing::kd_tree::KdTree::Node> kd_tree;
 };
 
 }// namespace picture
