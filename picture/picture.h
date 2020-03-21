@@ -86,7 +86,7 @@ private:
     void MakeTriangleMash(const char *file_name);
 
 public:
-    std::string out_file_path = "Result.jpg";
+    std::string out_file_path = "outfile.jpg";
     static int scene_id;
 
     Picture(const int argc, const char **argv);

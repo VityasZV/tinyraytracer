@@ -1,7 +1,7 @@
 #include "picture/picture.h"
 #include "raytracing/raytracing.h"
 
-int picture::Picture::scene_id=2;
+
 int main(int argc, const char **argv) {
     try
     {

@@ -11,7 +11,21 @@
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+struct BackGround{
+    static void GetData(int PicW,int PicH,std::vector<Vec3f> PicEnv)
+    {
+        width=PicW;
+        height=PicH;
+        envmap=PicEnv;
+    }
+    static int width;
+    static int height;
+    static std::vector<Vec3f> envmap;
+};
 
+int BackGround::height=0;
+int BackGround::width=0;
+std::vector<Vec3f> BackGround::envmap{};
 //TODO : description
 /// reflect
 /// \param I
@@ -21,13 +35,7 @@ Vec3f reflect(const Vec3f &I, const Vec3f &N) {
     return I - N * 2.f * (I * N);
 }
 
-namespace BackGround
-{
-    int width;
-    int height;
-    unsigned char *pixmap;
-    std::vector<Vec3f> envmap;
-};
+int picture::Picture::scene_id=2;
 
 
 //TODO : description
@@ -47,6 +55,19 @@ Vec3f refract(const Vec3f &I, const Vec3f &N, const float eta_t, const float eta
                                                    sqrtf(k)); // k<0 = total reflection, no ray to refract. I refract it anyways, this has no physical meaning
 }
 
+bool Boardscene(int scene_id,float d, Vec3f point)
+{
+    float spheres_dist = std::numeric_limits<float>::max();
+    float triangles_dist = std::numeric_limits<float>::max();
+    float cubes_dist = std::numeric_limits<float>::max();
+    switch (scene_id)
+    {
+        case 1:
+            return d > 0 && d < spheres_dist && d < triangles_dist;
+        case 2:
+            return d > 0 && fabs(point.x) < 10 && point.z < -10 && point.z > -30 && d < spheres_dist && d < triangles_dist;
+    }
+}
 bool scene_intersect(const raytracing::entities::Ray &ray,
                      const std::vector<std::unique_ptr<const raytracing::entities::Figure>> &figures,
                      Vec3f &hit, Vec3f &N, raytracing::entities::Material &material) {
@@ -69,26 +90,12 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
     if (fabs(ray.dir.y) > 1e-3) {
         float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
         Vec3f pt = ray.orig + ray.dir * d;
-        switch (picture::Picture::scene_id) {
-            case 1: {
-                if (d > 0 && d < spheres_dist && d < triangles_dist) {
-                    checkerboard_dist = d;
-                    hit = pt;
-                    N = Vec3f(0, 1, 0);
-                    material.diffuse_color =
-                            (int(.5 * hit.x + 1000) + int(.5 * hit.z)) & 1 ? Vec3f(.10, .10, .10) : Vec3f(.3, .2, .1);
-                }
-            }
-            case 2: {
-                if (d > 0 && fabs(pt.x) < 10 && pt.z < -10 && pt.z > -30 && d < spheres_dist && d < triangles_dist) {
-                    checkerboard_dist = d;
-                    hit = pt;
-                    N = Vec3f(0, 1, 0);
-                    material.diffuse_color =
-                            (int(.5 * hit.x + 1000) + int(.5 * hit.z)) & 1 ? Vec3f(.10, .10, .10) : Vec3f(.3, .2, .1);
-
-                }
-            }
+        if (Boardscene(picture::Picture::scene_id,d,pt)){
+            checkerboard_dist = d;
+            hit = pt;
+            N = Vec3f(0, 1, 0);
+            material.diffuse_color =
+                    (int(.5 * hit.x + 1000) + int(.5 * hit.z)) & 1 ? Vec3f(.10, .10, .10) : Vec3f(.3, .2, .1);
         }
     }
     return std::min({spheres_dist, checkerboard_dist, cubes_dist, triangles_dist}) < 1000;
@@ -243,13 +250,11 @@ void render(const char *out_file_path, const std::vector<std::unique_ptr<const e
     const float fov = M_PI / 3.0; ///that's a viewing angle = pi/3
     std::vector<Vec3f> framebuffer(width * height);
     unsigned char *pixmap = stbi_load("../3d.jpg", &env_width, &env_height, &n, STBI_rgb);
-    BackGround::width=env_width;
-    BackGround::height=env_height;
-    BackGround::envmap = std::vector<Vec3f>(BackGround::width*BackGround::height);
     if (!pixmap || 3!=n) {
         std::cerr << "Error: can not load the environment map" << std::endl;
         exit(-1);
     }
+    BackGround::GetData(env_width,env_height,std::vector<Vec3f>(env_width*env_height));
     for (int j = BackGround::height-1; j>=0 ; j--) {
         for (int i = 0; i < BackGround::width; i++) {
             BackGround::envmap[i + j * BackGround::width] =
@@ -259,7 +264,6 @@ void render(const char *out_file_path, const std::vector<std::unique_ptr<const e
     }
     stbi_image_free(pixmap);
     const auto amount_of_threads = std::thread::hardware_concurrency(); //because of asynchronius tasks we can make it a bit bigger
-//    const auto amount_of_threads = 1; //because of asynchronius tasks we can make it a bit bigger
     std::vector<std::future<void>> tasks(amount_of_threads);
     size_t portion = height / amount_of_threads;
     for (size_t start = 0, finish = portion, index = 0; index < amount_of_threads; ++index, start = finish, finish = index == amount_of_threads - 1 ? height : finish + portion) {
@@ -291,7 +295,7 @@ void render(const char *out_file_path, const std::vector<std::unique_ptr<const e
             Npixmap[i*3+j] = (unsigned char)(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
         }
     }
-    stbi_write_jpg("FINAL.jpg", width, height, 3, Npixmap.data(), 100);
+    stbi_write_jpg("outfile.jpg", width, height, 3, Npixmap.data(), 100);
 }
 
 }// namespace raytracing

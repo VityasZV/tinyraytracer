@@ -9,7 +9,8 @@
 #include <future>
 #include <string.h>
 
-picture::Picture::Picture(const int argc, const char **argv) {
+
+picture::Picture::  Picture(const int argc, const char **argv) {
     PreparingOutFileAndScene(argc, argv);
     for (const auto &p : spheres_params) {
         figures.emplace_back(std::make_unique<raytracing::entities::Sphere>(p.coordinates, p.radius, p.material));
