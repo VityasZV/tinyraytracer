@@ -1,5 +1,7 @@
 #include "raytracing.h"
 #include "../picture/picture.h"
+#include "entities.h"
+
 
 #include <cmath>
 #include <limits>
@@ -28,6 +30,80 @@ struct BackGround{
 int BackGround::height=0;
 int BackGround::width=0;
 std::vector<Vec3f> BackGround::envmap{};
+raytracing::kd_tree::KdTree::Node *raytracing::Render::bin_search_in_tree(const raytracing::entities::Ray &ray,
+                                                                          std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
+    float t_near, t_far;
+    if (tree == nullptr) return nullptr; //if tree is not formed at all
+    if (tree->box.Intersect(ray, t_near, t_far)) {
+        float t_split;
+        auto *plane_ptr = std::get_if<raytracing::entities::Plane>(&tree->plane_or_figures);
+        if (plane_ptr != nullptr) {
+            if (!plane_ptr->Intersect(ray, t_split)) {
+                //ray doesnt intersect with plane
+                //detecting needed child
+                //left
+                if (ray.orig.x + t_near * ray.dir.x < plane_ptr->GetPos()) {
+                    return bin_search_in_tree(ray, tree->child.first);
+                }
+                    //right
+                else {
+                    return bin_search_in_tree(ray, tree->child.second);
+                }
+            }
+            //now there are some different cases:
+            //1) ray intersects only one of two nodes
+            if (t_split >= t_far || t_split < t_near) {
+                //left node is valid
+                if (t_split >= t_far) {
+                    return bin_search_in_tree(ray, tree->child.first);
+                } else {
+                    return bin_search_in_tree(ray, tree->child.second);
+                }
+            }
+                //2) ray intersects both nodes
+            else {
+                /*
+                 *  (В случае если луч пересекает оба дочерних узла ,
+                 *  необходимо сначала поискать пересечение в ближнем узле и если оно не найдено,
+                 *  искать его в дальнем. Так как в общем случае неизвестно, сколько раз произойдет последнее событие(отсутствие пересечения в ближнем узле),
+                 *  необходим стек. Каждый раз, когда луч пересекает оба дочерних узла, адрес дальнего узла, t_near и t_far помещаются в стек
+                 *  и поиск продолжается в ближнем. Если в ближнем узле пересечение не найдено, из стека достаются адрес дальнего узла, t_near, t_far и
+                 *  поиск продолжается в дальнем узле.)
+                 *
+                 */
+                //closer box is from t_near to t_split.
+                //We can find needed child_node by next comparing
+                auto x_near = ray.orig.x + ray.dir.x * t_near;
+                auto x_split = ray.orig.x + ray.dir.x * t_split;
+                raytracing::kd_tree::KdTree::Node *result = nullptr;
+                //left box is closer
+                if (x_near < x_split) {
+                    result = bin_search_in_tree(ray, tree->child.first);
+                    if (result == nullptr) {
+                        result = bin_search_in_tree(ray, tree->child.second);
+                    }
+                }
+                    //right box is closer
+                else {
+                    result = bin_search_in_tree(ray, tree->child.second);
+                    if (result == nullptr) {
+                        result = bin_search_in_tree(ray, tree->child.first);
+                    }
+                }
+
+            }
+        } else {
+            //we are in needed node of tree - it contains figures
+            return tree.get();
+        }
+    }
+    return nullptr;
+}
+
+void raytracing::Render::initialize_kd_tree(std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
+    raytracing::tree = tree;
+}
+
 //TODO : description
 /// reflect
 /// \param I
@@ -77,15 +153,24 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
     float triangles_dist = std::numeric_limits<float>::max();
     float cubes_dist = std::numeric_limits<float>::max();
 
-    for (const auto &p : figures) {
-        float dist_i;
-        if (p->ray_intersect(ray, dist_i)) {
-            auto &figure_dist = p->NeededDist(spheres_dist, triangles_dist, cubes_dist);
-            if (dist_i < figure_dist) {
-                figure_dist = dist_i;
-                p->SetNeededNormHitMaterial(ray, dist_i, N, hit, material);
+    //TODO: here, instead of checking all figures, we should intersection of a ray with kd tree
+    auto needed_node = raytracing::Render::bin_search_in_tree(ray, raytracing::tree);
+    if (needed_node) {
+        //std::cout << "needed node: " << needed_node->box.GetVMin() << " " << needed_node->box.GetVMax() << std::endl;
+        auto *objects = std::get_if<const std::vector<std::shared_ptr<raytracing::kd_tree::KdTree::RenderWrapper>>>(
+                &needed_node->plane_or_figures);
+        for (const auto &p : *objects) {
+            float dist_i;
+            if (p->obj->ray_intersect(ray, dist_i)) {
+                auto &figure_dist = p->obj->NeededDist(spheres_dist, triangles_dist, cubes_dist);
+                if (dist_i < figure_dist) {
+                    figure_dist = dist_i;
+                    p->obj->SetNeededNormHitMaterial(ray, dist_i, N, hit, material);
+                }
             }
         }
+    } else {
+        //ray doesnt intersect with any of primitives
     }
 
     float checkerboard_dist = std::numeric_limits<float>::max();
@@ -297,8 +382,8 @@ void SavingJpg (const char* file_name, int width, int height, std::vector<Vec3f>
     stbi_write_jpg(file_name, width, height, 3, Npixmap.data(), 100);  
 }
 
-void render(const char *out_file_path, const std::vector<std::unique_ptr<const entities::Figure>> &figures,
-            const std::vector<entities::Light> &lights) {
+void Render::render(const char *out_file_path, const std::vector<std::unique_ptr<const entities::Figure>> &figures,
+                    const std::vector<entities::Light> &lights) {
     const int width = 1920;
     const int height = 1080;
     int env_width,env_height,n=-1;

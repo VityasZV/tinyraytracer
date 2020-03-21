@@ -6,6 +6,7 @@
 #define RAYTRACER_PICTURE_H
 
 #include "../raytracing/entities.h"
+#include "../kd-tree/kdtree.h"
 
 #include <unordered_map>
 #include <memory>
@@ -86,15 +87,19 @@ private:
 
     void MakeTriangleMash(const char *file_name);
 
+    void FormKdTree();
+
 public:
     std::string out_file_path = "outfile.jpg";
     static int scene_id;
+
 
     Picture(const int argc, const char **argv);
     ~Picture() = default;
 
     std::vector<raytracing::entities::Light> lights;
     std::vector<std::unique_ptr<const raytracing::entities::Figure>> figures;
+    std::shared_ptr<raytracing::kd_tree::KdTree::Node> kd_tree;
 };
 }// namespace picture
 #endif //RAYTRACER_PICTURE_H
