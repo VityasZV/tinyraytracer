@@ -22,13 +22,13 @@ picture::Picture::Picture(const int argc, const char **argv) {
     const auto shift3 = Vec3f(15, 1, -6);
     const auto shifts = {shift1, shift2, shift3};
     //here is my triangles
-    for (const auto &p : triangle_params) {
-        for (const auto &s : shifts) {
-            figures.emplace_back(
-                    std::make_unique<raytracing::entities::Triangle>(p.p0 + s, p.p1 + s, p.p2 + s,
-                                                                     p.material));
-        }
-    }
+//    for (const auto &p : triangle_params) {
+//        for (const auto &s : shifts) {
+//            figures.emplace_back(
+//                    std::make_unique<raytracing::entities::Triangle>(p.p0 + s, p.p1 + s, p.p2 + s,
+//                                                                     p.material));
+//        }
+//    }
     triangle_params.clear();
     //here comes the duck
     //MakeTriangleMash("../duck.obj");
