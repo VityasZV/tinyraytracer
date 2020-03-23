@@ -31,9 +31,9 @@ picture::Picture::Picture(const int argc, const char **argv) {
     }
     triangle_params.clear();
     //here comes the duck
-    MakeTriangleMash("../duck.obj");
+    //MakeTriangleMash("../duck.obj");
     //here comes the deer
-    MakeTriangleMash("../deer.obj");
+    //MakeTriangleMash("../deer.obj");
     std::cout << "Всего примитивов " << figures.size() << std::endl;
     FormKdTree();
 }

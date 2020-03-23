@@ -65,8 +65,9 @@ raytracing::entities::Plane
 KdTree::cut(const std::vector<std::shared_ptr<RenderWrapper>> &objs, const raytracing::entities::Axis &axis) {
     std::vector<float> min_list;
     min_list.resize(objs.size());
+    size_t i = 0;
     for (auto &obj_ptr : objs) {
-        min_list.push_back(obj_ptr->box.GetVMin()[axis]);
+        min_list[i++] = obj_ptr->box.GetVMin()[axis];
     }
     //sort that relates to [min_list.begin() + min_list.size() / 2] element
     std::nth_element(min_list.begin(), min_list.begin() + min_list.size() / 2, min_list.end());

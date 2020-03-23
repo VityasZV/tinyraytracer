@@ -10,6 +10,26 @@
 #include <future>
 #include <memory>
 
+void tree_trace(std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
+//    std::cout << "\nOBHOD\n" << std::endl;
+    if (tree == nullptr) return;
+    std::cout << tree->box.Size() << tree->box.GetVMin() << tree->box.GetVMax() << std::endl;
+    auto *obj = std::get_if<const std::vector<std::shared_ptr<raytracing::kd_tree::KdTree::RenderWrapper>>>(
+            &tree->plane_or_figures);
+    if (obj) {
+        std::cout << "всего фигур: " << obj->size() << " штук: " << "vmin=" << tree->box.GetVMin() << "vmax= "
+                  << tree->box.GetVMax() << std::endl;
+        for (auto &p : *obj) {
+            p->obj->print();
+        }
+    } else {
+        auto *pl = std::get_if<raytracing::entities::Plane>(&tree->plane_or_figures);
+        std::cout << pl->GetPos();
+    }
+    tree_trace(tree->child.first);
+    tree_trace(tree->child.second);
+}
+
 raytracing::kd_tree::KdTree::Node *raytracing::Render::bin_search_in_tree(const raytracing::entities::Ray &ray,
                                                                           std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
     float t_near, t_far;
@@ -313,6 +333,7 @@ Vec3f anti_aliasing (double dir_x, double dir_y, double dir_z,
 
 void Render::render(const char *out_file_path, const std::vector<std::unique_ptr<const entities::Figure>> &figures,
                     const std::vector<entities::Light> &lights) {
+    tree_trace(raytracing::tree);
     const int width = 1920;
     const int height = 1080;
     const float fov = M_PI / 3.0; ///that's a viewing angle = pi/3
