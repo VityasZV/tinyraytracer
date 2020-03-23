@@ -18,7 +18,7 @@ enum class NodeOrLeaf {
 
 class KdTree {
 public:
-    const static unsigned int min_amount_of_figures = 4;
+    const static unsigned int min_amount_of_figures = 2;
     const static unsigned int max_depth = 20;
     struct RenderWrapper;
 

@@ -38,6 +38,13 @@ raytracing::kd_tree::KdTree::Node *raytracing::Render::bin_search_in_tree(const 
         float t_split;
         auto *plane_ptr = std::get_if<raytracing::entities::Plane>(&tree->plane_or_figures);
         if (plane_ptr != nullptr) {
+            //only for testing
+            auto res = bin_search_in_tree(ray, tree->child.first);
+            if (res == nullptr){
+                return bin_search_in_tree(ray, tree->child.second);
+            }
+            else return res;
+            //wont start
             if (!plane_ptr->Intersect(ray, t_split)) {
                 //ray doesnt intersect with plane
                 //detecting needed child
@@ -94,7 +101,17 @@ raytracing::kd_tree::KdTree::Node *raytracing::Render::bin_search_in_tree(const 
             }
         } else {
             //we are in needed node of tree - it contains figures
-            return tree.get();
+            //FIXME but we dont know if ray will intersect any of figures in here
+            auto *objects = std::get_if<const std::vector<std::shared_ptr<raytracing::kd_tree::KdTree::RenderWrapper>>>(
+                    &tree->plane_or_figures);
+            for (const auto &p : *objects) {
+                float dist_i;
+                if (p->obj->ray_intersect(ray, dist_i)) {
+                    return tree.get();
+                }
+            }
+            //we fucked up, returning nullptr
+            return nullptr;
         }
     }
     return nullptr;
@@ -338,7 +355,7 @@ void Render::render(const char *out_file_path, const std::vector<std::unique_ptr
     const int height = 1080;
     const float fov = M_PI / 3.0; ///that's a viewing angle = pi/3
     std::vector<Vec3f> framebuffer(width * height);
-    const auto amount_of_threads = std::thread::hardware_concurrency(); //because of asynchronius tasks we can make it a bit bigger
+    const auto amount_of_threads = 1;//std::thread::hardware_concurrency(); //because of asynchronius tasks we can make it a bit bigger
     std::vector<std::future<void>> tasks(amount_of_threads);
     size_t portion = height / amount_of_threads;
     for (size_t start = 0, finish = portion, index = 0; index < amount_of_threads; ++index, start = finish, finish = index == amount_of_threads - 1 ? height : finish + portion) {
