@@ -29,7 +29,7 @@ class Render {
 
 public:
     void initialize_kd_tree(std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree);
-    static raytracing::kd_tree::KdTree::Node *
+    static std::vector<raytracing::kd_tree::KdTree::Node *>
     bin_search_in_tree(const raytracing::entities::Ray &ray, std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree);
 
     /// render - function for filling image with blue color, also for adding spheres and lights to

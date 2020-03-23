@@ -11,9 +11,9 @@
 
 picture::Picture::Picture(const int argc, const char **argv) {
     PreparingOutFileAndScene(argc, argv);
-    for (const auto &p : spheres_params) {
-        figures.emplace_back(std::make_unique<raytracing::entities::Sphere>(p.coordinates, p.radius, p.material));
-    }
+//    for (const auto &p : spheres_params) {
+//        figures.emplace_back(std::make_unique<raytracing::entities::Sphere>(p.coordinates, p.radius, p.material));
+//    }
     for (const auto &p : lights_params) {
         lights.emplace_back(raytracing::entities::Light(p.position, p.intensity));
     }
@@ -31,10 +31,10 @@ picture::Picture::Picture(const int argc, const char **argv) {
 //    }
     triangle_params.clear();
     //here comes the duck
-    //MakeTriangleMash("../duck.obj");
+    MakeTriangleMash("../duck.obj");
     //here comes the deer
-    //MakeTriangleMash("../deer.obj");
-    std::cout << "Всего примитивов " << figures.size() << std::endl;
+    MakeTriangleMash("../deer.obj");
+    //std::cout << "Всего примитивов " << figures.size() << std::endl;
     FormKdTree();
 }
 
@@ -127,7 +127,7 @@ void picture::Picture::FormKdTree() {
     }
     figures.clear();
     kd_tree = raytracing::kd_tree::KdTree::build(figures_in_tree_root, space, 0);
-    std::cout << "finish" << std::endl;
+    //std::cout << "finish" << std::endl;
 }
 
 
