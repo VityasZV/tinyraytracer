@@ -13,9 +13,9 @@
 
 picture::Picture::  Picture(const int argc, const char **argv) {
     PreparingOutFileAndScene(argc, argv);
-//    for (const auto &p : spheres_params) {
-//        figures.emplace_back(std::make_unique<raytracing::entities::Sphere>(p.coordinates, p.radius, p.material));
-//    }
+    for (const auto &p : spheres_params) {
+        figures.emplace_back(std::make_unique<raytracing::entities::Sphere>(p.coordinates, p.radius, p.material));
+    }
     for (const auto &p : lights_params) {
         lights.emplace_back(raytracing::entities::Light(p.position, p.intensity));
     }
@@ -31,6 +31,15 @@ picture::Picture::  Picture(const int argc, const char **argv) {
 //                                                                     p.material));
 //        }
 //    }
+    const auto c_shift1 = Vec3f(3, 1, 0);
+    const auto c_shift2 = Vec3f(-3, 1, 0);
+    const auto c_shift3 = Vec3f(0, 1, 0);
+    const auto c_shifts = {c_shift1, c_shift2, c_shift3};
+    for (const auto& p : cubes_params){
+        for (const auto &s : c_shifts) {
+            figures.emplace_back(std::make_unique<raytracing::entities::Cube>(p.vmin + s, p.vmax + s, p.material));
+        }
+    }
     triangle_params.clear();
     //here comes the duck
     const auto duck_shift1 = Vec3f{-10, 0, 0};
@@ -38,14 +47,14 @@ picture::Picture::  Picture(const int argc, const char **argv) {
     const auto duck_shift3 = Vec3f{0, 0, -10};
 
 
-    MakeTriangleMash("../duck.obj", Vec3f(0,0,0));
-    MakeTriangleMash("../duck.obj", duck_shift1);
-    MakeTriangleMash("../duck.obj", duck_shift2);
-    MakeTriangleMash("../duck.obj", duck_shift3);
+//    MakeTriangleMash("../duck.obj", Vec3f(0,0,0));
+//    MakeTriangleMash("../duck.obj", duck_shift1);
+//    MakeTriangleMash("../duck.obj", duck_shift2);
+//    MakeTriangleMash("../duck.obj", duck_shift3);
     //here comes the deer
     //MakeTriangleMash("../deer.obj");
     //std::cout << "Всего примитивов " << figures.size() << std::endl;
-    FormKdTree();
+    //FormKdTree();
 }
 
 void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
@@ -175,8 +184,6 @@ void picture::Picture::MakeTriangleMash(const char *file_name, const Vec3f& shif
 
 void picture::Picture::FormKdTree() {
     raytracing::entities::AABB space(Vec3f(-30, -16, -5), Vec3f(30, 16, -30)); //initial coube
-    //DONE
-    //пихать в figures_in_tree_root нужно не внешний куб, а куб для каждого блять примитива на хуй -- done
     std::vector<std::shared_ptr<raytracing::kd_tree::KdTree::RenderWrapper>> figures_in_tree_root;
     for (auto &figure : figures) {
         auto bounding_box = figure->GetAABB();
