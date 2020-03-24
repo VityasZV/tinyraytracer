@@ -85,7 +85,7 @@ private:
             {Vec3f(-3, 0, -3), Vec3f(1, 4, -7), Materials[MaterialName::mirror]}
     };
 
-    void MakeTriangleMash(const char *file_name);
+    void MakeTriangleMash(const char *file_name, const Vec3f& shift);
 
     void FormKdTree();
 

@@ -4,25 +4,6 @@
 #include <memory>
 #include <variant>
 
-void tree_trace(std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
-//    std::cout << "\nOBHOD\n" << std::endl;
-    if (tree == nullptr) return;
-    std::cout << tree->box.Size() << tree->box.GetVMin() << tree->box.GetVMax() << std::endl;
-    auto *obj = std::get_if<const std::vector<std::shared_ptr<raytracing::kd_tree::KdTree::RenderWrapper>>>(
-            &tree->plane_or_figures);
-    if (obj) {
-        std::cout << "всего фигур: " << obj->size() << " штук: " << "vmin=" << tree->box.GetVMin() << "vmax= "
-                  << tree->box.GetVMax() << std::endl;
-        for (auto &p : *obj) {
-            p->obj->print();
-        }
-    } else {
-        auto *pl = std::get_if<raytracing::entities::Plane>(&tree->plane_or_figures);
-        std::cout << pl->GetPos();
-    }
-    tree_trace(tree->child.first);
-    tree_trace(tree->child.second);
-}
 
 
 int main(int argc, const char **argv) {
