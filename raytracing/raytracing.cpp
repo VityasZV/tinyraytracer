@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <future>
 #include <memory>
-#include <unordered_set>
 
 void tree_trace(std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
     if (tree == nullptr) return;
@@ -31,36 +30,35 @@ void tree_trace(std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
     tree_trace(tree->child.second);
 }
 
-std::vector<raytracing::kd_tree::KdTree::Node *>
+std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float>
 raytracing::Render::bin_search_in_tree(const raytracing::entities::Ray &ray,
                                        std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
     float t_near, t_far;
     if (tree == nullptr) return {}; //if tree is not formed at all
     if (tree->box.Intersect(ray, t_near, t_far)) {
-        // only for testing
         auto *objects = std::get_if<const std::vector<std::shared_ptr<raytracing::kd_tree::KdTree::RenderWrapper>>>(
                 &tree->plane_or_figures);
         if (objects) {
+            std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float> result;
             for (const auto &p : *objects) {
                 float dist_i;
                 if (p->obj->ray_intersect(ray, dist_i)) {
-                    return {tree.get()};
+                    result.insert({p->obj, dist_i});
                 }
             }
+            return result;
         }
         auto res1 = tree->child.first ? bin_search_in_tree(ray, tree->child.first)
-                                      : std::vector<raytracing::kd_tree::KdTree::Node *>();
+                                      : std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float>();
         auto res2 = tree->child.second ? bin_search_in_tree(ray, tree->child.second)
-                                       : std::vector<raytracing::kd_tree::KdTree::Node *>();
+                                       : std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float>();
         auto result = [&res1, &res2]() {
-            std::vector<raytracing::kd_tree::KdTree::Node *> res;
-            res.resize(res1.size() + res2.size());
-            size_t i = -1;
-            for (const auto &e : res1) {
-                res[++i] = e;
+            std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float> res;
+            for (auto &e : res1){
+                res.insert(e);
             }
-            for (const auto &e : res2) {
-                res[++i] = e;
+            for (auto &e : res2){
+                res.insert(e);
             }
             return res;
         }();
@@ -116,25 +114,15 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
 
     //if we launched tree
     if (raytracing::tree) {
-        auto needed_nodes = raytracing::Render::bin_search_in_tree(ray, raytracing::tree);
-        if (needed_nodes.size() != 0) {
-            std::unordered_set<std::shared_ptr<const raytracing::entities::Figure>> viewed_nodes;
-            for (auto &node : needed_nodes) {
-                auto *objects = std::get_if<const std::vector<std::shared_ptr<raytracing::kd_tree::KdTree::RenderWrapper>>>(
-                        &node->plane_or_figures);
-                for (const auto &p : *objects) {
-                    float dist_i;
-                    if (p->obj->ray_intersect(ray, dist_i) && viewed_nodes.find(p->obj) == viewed_nodes.end()) {
-                        viewed_nodes.insert(p->obj);
-                        auto &figure_dist = p->obj->NeededDist(spheres_dist, triangles_dist, cubes_dist);
-                        if (dist_i < figure_dist) {
-                            figure_dist = dist_i;
-                            p->obj->SetNeededNormHitMaterial(ray, dist_i, N, hit, material);
-                        }
-                    }
+        auto needed_figures_and_dists = raytracing::Render::bin_search_in_tree(ray, raytracing::tree);
+        if (needed_figures_and_dists.size() != 0) {
+            for (auto &f : needed_figures_and_dists){
+                auto &figure_dist = f.first->NeededDist(spheres_dist, triangles_dist, cubes_dist);
+                if (f.second < figure_dist) {
+                    figure_dist = f.second;
+                    f.first->SetNeededNormHitMaterial(ray, f.second, N, hit, material);
                 }
             }
-
         } else {
             //ray doesnt intersect with any of primitives
             //need to find checkerboard

@@ -6,6 +6,9 @@
 #include <memory>
 #include "../kd-tree/kdtree.h"
 
+#include <unordered_set>
+#include <unordered_map>
+
 namespace raytracing {
 static std::shared_ptr<kd_tree::KdTree::Node> tree;
 struct BinParams {
@@ -29,7 +32,7 @@ class Render {
 
 public:
     void initialize_kd_tree(std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree);
-    static std::vector<raytracing::kd_tree::KdTree::Node *>
+    static std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float>
     bin_search_in_tree(const raytracing::entities::Ray &ray, std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree);
 
     /// render - function for filling image with blue color, also for adding spheres and lights to

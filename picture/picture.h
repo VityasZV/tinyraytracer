@@ -112,7 +112,7 @@ private:
 
     };
 
-    void MakeTriangleMash(const char *file_name);
+    void MakeTriangleMash(const char *file_name, const Vec3f& shift);
 
     void FormKdTree();
 
