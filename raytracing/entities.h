@@ -322,8 +322,8 @@ public:
     ///To represent an axis-aligned bounding volume, all we need are two points
     /// representing the minimum and maximum extent of the box (called bounds in the code).
     Cube(const Vec3f &vmin, const Vec3f &vmax, const Material &m) : Figure(m, FigureName::Cube) {
-        bounds[0] = vmin;//левая нижняя ближняя?
-        bounds[1] = vmax;//правая верхняя дальная?
+        bounds[0] = vmin;
+        bounds[1] = vmax;
     }
 
     ~Cube() = default;
@@ -339,9 +339,14 @@ public:
     void SetNeededNormHitMaterial(const Ray &ray, const float &dist_i, Vec3f &n, Vec3f &h, Material &m) const override {
         h = ray.orig + ray.dir * dist_i;
         //TODO - неверно, надо разобраться
-        n = (h - bounds[0]).normalize();
+        n = (h - (bounds[0] + bounds[1])/2).normalize();
         m = GetMaterial();
     }
+
+    AABB GetAABB() const override {
+        return AABB(this->bounds[0] - Vec3f(EPS, EPS, EPS), this->bounds[1] + Vec3f(EPS, EPS, EPS));
+    }
+
 };
 
 }// namespace raytracing::entities

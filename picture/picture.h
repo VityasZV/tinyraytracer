@@ -78,8 +78,6 @@ private:
             {Vec3f(1.5, -0.5, -18),  3, Materials[MaterialName::red_rubber]},
             {Vec3f(7, 5, -18),       4, Materials[MaterialName::mirror]},
             {Vec3f(-8, 5, -18),      4, Materials[MaterialName::mirror]},
-
-
     };
 
     std::vector<LightParams> lights_params{
@@ -89,7 +87,7 @@ private:
     };
 
     std::vector<CubeParams> cubes_params{
-            {Vec3f(-3, 0, -3), Vec3f(1, 4, -7), Materials[MaterialName::red_rubber]}
+            {Vec3f(-0.5, -0.5, -4), Vec3f(0.5, 0.5, -5), Materials[MaterialName::red_rubber]}
     };
     std::vector<TriangleParams> triangle_params{
             //dont forget about right trio while adding params!!!

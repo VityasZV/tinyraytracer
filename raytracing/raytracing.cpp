@@ -129,7 +129,7 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
             if (fabs(ray.dir.y) > 1e-3) {
                 float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
                 Vec3f pt = ray.orig + ray.dir * d;
-                if (d > 0 && d < spheres_dist && d < triangles_dist) {
+                if (d > 0 && d < spheres_dist && d < triangles_dist && d < cubes_dist) {
                     checkerboard_dist = d;
                     hit = pt;
                     N = Vec3f(0, 1, 0);
@@ -152,7 +152,7 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
         if (fabs(ray.dir.y) > 1e-3) {
             float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
             Vec3f pt = ray.orig + ray.dir * d;
-            if (d > 0 && d < spheres_dist && d < triangles_dist) {
+            if (d > 0 && d < spheres_dist && d < triangles_dist && d < cubes_dist) {
                 checkerboard_dist = d;
                 hit = pt;
                 N = Vec3f(0, 1, 0);
@@ -227,37 +227,33 @@ bool Sphere::ray_intersect(const Ray &ray, float &t0) const {
 
 //TODO needs testing
 bool Cube::ray_intersect(const Ray &ray, float &t0) const {
-    float t_min, t_max, t_y_min, t_y_max, t_z_min, t_z_max;
+    float t1 = (bounds[0].x - ray.orig.x)*ray.invdir.x;
+    float t2 = (bounds[1].x - ray.orig.x)*ray.invdir.x;
+    float t3 = (bounds[0].y - ray.orig.y)*ray.invdir.y;
+    float t4 = (bounds[1].y - ray.orig.y)*ray.invdir.y;
+    float t5 = (bounds[0].z - ray.orig.z)*ray.invdir.z;
+    float t6 = (bounds[1].z - ray.orig.z)*ray.invdir.z;
+    float t = 0;
+    float t_near = std::max(std::max(std::min(t1, t2), std::min(t3, t4)), std::min(t5, t6));
+    float t_far = std::min(std::min(std::max(t1, t2), std::max(t3, t4)), std::max(t5, t6));
 
-    t_min = (bounds[ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
-    t_max = (bounds[1 - ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
-    t_y_min = (bounds[ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
-    t_y_max = (bounds[1 - ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
-
-    if ((t_min > t_y_max) || (t_y_min > t_max))
+    // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+    if (t_far < 0)
+    {
+        t = t_far;
         return false;
-    if (t_y_min > t_min)
-        t_min = t_y_min;
-    if (t_y_max < t_max)
-        t_max = t_y_max;
-
-    t_z_min = (bounds[ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
-    t_z_max = (bounds[1 - ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
-
-    if ((t_min > t_z_max) || (t_z_min > t_max))
-        return false;
-    if (t_z_min > t_min)
-        t_min = t_z_min;
-    if (t_z_max < t_max)
-        t_max = t_z_max;
-
-    t0 = t_min;
-
-    if (t0 < 0) {
-        t0 = t_max;
-        if (t0 < 0) return false;
     }
 
+    // if tmin > tmax, ray doesn't intersect AABB
+    if (t_near> t_far)
+    {
+        t = t_far;
+        return false;
+    }
+
+    t = t_near;
+    //to is nearest point of intersection
+    t0 = t_near;
     return true;
 }
 
@@ -340,7 +336,7 @@ void Render::render(const char *out_file_path, const std::vector<std::unique_ptr
     size_t portion = height / amount_of_threads;
     for (size_t start = 0, finish = portion, index = 0; index < amount_of_threads; ++index, start = finish, finish =
             index == amount_of_threads - 1 ? height : finish + portion) {
-        tasks[index] = std::async(std::launch::async, [&, start, finish, width, height, fov, this]() {
+        tasks[index] = std::async(std::launch::async, [&, start, finish, width, height, fov]() {
             for (size_t j = start; j < finish; ++j) {
                 for (size_t i = 0; i < width; ++i) {
                     auto dir_x = (i + 0.5) - width / 2.;
