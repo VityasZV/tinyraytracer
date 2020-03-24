@@ -75,7 +75,7 @@ public:
         const std::vector<std::unique_ptr<const Figure>> *const figures_ptr = nullptr,
         const std::vector<Light> *const lights_ptr = nullptr,
         const std::optional<size_t> depth = std::nullopt) : orig(orig), dir(dir) {
-        invdir = 1 / dir;
+        invdir = 1.0 / dir;
         sign[0] = (invdir.x < 0);
         sign[1] = (invdir.y < 0);
         sign[2] = (invdir.z < 0);
@@ -136,35 +136,32 @@ public:
     //boolshit
 
     bool Intersect(const Ray &ray, float &t_near, float &t_far) const {
-        float tmin, tmax, tymin, tymax, tzmin, tzmax;
+        float t1 = (v_min.x - ray.orig.x)*ray.invdir.x;
+        float t2 = (v_max.x - ray.orig.x)*ray.invdir.x;
+        float t3 = (v_min.y - ray.orig.y)*ray.invdir.y;
+        float t4 = (v_max.y - ray.orig.y)*ray.invdir.y;
+        float t5 = (v_min.z - ray.orig.z)*ray.invdir.z;
+        float t6 = (v_max.z - ray.orig.z)*ray.invdir.z;
+        float t = 0;
+        t_near = std::max(std::max(std::min(t1, t2), std::min(t3, t4)), std::min(t5, t6));
+        t_far = std::min(std::min(std::max(t1, t2), std::max(t3, t4)), std::max(t5, t6));
 
-        std::array<Vec3f, 2> bounds = {v_min, v_max};
-        tmin = (bounds[ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
-        tmax = (bounds[1 - ray.sign[0]].x - ray.orig.x) * ray.invdir.x;
-        tymin = (bounds[ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
-        tymax = (bounds[1 - ray.sign[1]].y - ray.orig.y) * ray.invdir.y;
-
-        if ((tmin > tymax) || (tymin > tmax))
+        // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+        if (t_far < 0)
+        {
+            t = t_far;
             return false;
-        if (tymin > tmin)
-            tmin = tymin;
-        if (tymax < tmax)
-            tmax = tymax;
+        }
 
-        tzmin = (bounds[ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
-        tzmax = (bounds[1 - ray.sign[2]].z - ray.orig.z) * ray.invdir.z;
-
-        if ((tmin > tzmax) || (tzmin > tmax))
+        // if tmin > tmax, ray doesn't intersect AABB
+        if (t_near> t_far)
+        {
+            t = t_far;
             return false;
-        if (tzmin > tmin)
-            tmin = tzmin;
-        if (tzmax < tmax)
-            tmax = tzmax;
+        }
 
-        t_near = tmin;
-        t_far = tmax;
+        t = t_near;
         return true;
-
     }
 
     std::pair<AABB, AABB> cut(const Plane &pl) {

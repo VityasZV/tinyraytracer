@@ -11,9 +11,9 @@
 
 picture::Picture::Picture(const int argc, const char **argv) {
     PreparingOutFileAndScene(argc, argv);
-    for (const auto &p : spheres_params) {
-        figures.emplace_back(std::make_unique<raytracing::entities::Sphere>(p.coordinates, p.radius, p.material));
-    }
+//    for (const auto &p : spheres_params) {
+//        figures.emplace_back(std::make_unique<raytracing::entities::Sphere>(p.coordinates, p.radius, p.material));
+//    }
     for (const auto &p : lights_params) {
         lights.emplace_back(raytracing::entities::Light(p.position, p.intensity));
     }
@@ -22,19 +22,27 @@ picture::Picture::Picture(const int argc, const char **argv) {
     const auto shift3 = Vec3f(15, 1, -6);
     const auto shifts = {shift1, shift2, shift3};
     //here is my triangles
-    for (const auto &p : triangle_params) {
-        for (const auto &s : shifts) {
-            figures.emplace_back(
-                    std::make_unique<raytracing::entities::Triangle>(p.p0 + s, p.p1 + s, p.p2 + s,
-                                                                     p.material));
-        }
-    }
+//    for (const auto &p : triangle_params) {
+//        for (const auto &s : shifts) {
+//            figures.emplace_back(
+//                    std::make_unique<raytracing::entities::Triangle>(p.p0 + s, p.p1 + s, p.p2 + s,
+//                                                                     p.material));
+//        }
+//    }
     triangle_params.clear();
     //here comes the duck
-    MakeTriangleMash("../duck.obj");
+    const auto duck_shift1 = Vec3f{-10, 0, 0};
+    const auto duck_shift2 = Vec3f{-10, 0, -10};
+    const auto duck_shift3 = Vec3f{0, 0, -10};
+
+
+    MakeTriangleMash("../duck.obj", Vec3f(0,0,0));
+    MakeTriangleMash("../duck.obj", duck_shift1);
+    MakeTriangleMash("../duck.obj", duck_shift2);
+    MakeTriangleMash("../duck.obj", duck_shift3);
     //here comes the deer
-    MakeTriangleMash("../deer.obj");
-    std::cout << "Всего примитивов " << figures.size() << std::endl;
+    //MakeTriangleMash("../deer.obj");
+    //std::cout << "Всего примитивов " << figures.size() << std::endl;
     FormKdTree();
 }
 
@@ -57,8 +65,9 @@ void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
         scene_id = atoi(cmd_line_params["-scene"].c_str());
 }
 
-void picture::Picture::MakeTriangleMash(const char *file_name) {
+void picture::Picture::MakeTriangleMash(const char *file_name, const Vec3f& shift) {
     auto shift_deer = Vec3f(-5, -4, -8);
+    shift_deer = shift_deer + shift;
     auto figure_material = Materials[MaterialName::red_rubber];
     std::vector<Vec3f> verticels;
     std::vector<Vec2f> uvIndices;
@@ -81,7 +90,7 @@ void picture::Picture::MakeTriangleMash(const char *file_name) {
             if (strncmp(file_name, "../deer.obj", 11) == 0) {
                 verticels.push_back(v / 200. + shift_deer);
             } else {
-                verticels.push_back(v);
+                verticels.push_back(v + shift);
             }
         } else if (!line.compare(0, 2, "vt")) {
             continue;
@@ -127,7 +136,7 @@ void picture::Picture::FormKdTree() {
     }
     figures.clear();
     kd_tree = raytracing::kd_tree::KdTree::build(figures_in_tree_root, space, 0);
-    std::cout << "finish" << std::endl;
+    //std::cout << "finish" << std::endl;
 }
 
 

@@ -12,7 +12,6 @@ namespace raytracing::kd_tree {
 
 std::shared_ptr<KdTree::Node>
 KdTree::build(const std::vector<std::shared_ptr<RenderWrapper>> &objs, entities::AABB &box, int depth) {
-    std::cout << objs.size() << std::endl;
     if (objs.empty() or depth > KdTree::max_depth) {
         return nullptr;
     }
@@ -24,7 +23,6 @@ KdTree::build(const std::vector<std::shared_ptr<RenderWrapper>> &objs, entities:
     // algorithm 1 (naive kdtree)
     auto best_plane = cut(objs, entities::Axis::x); //fixed plane on x axis
     std::optional<std::pair<raytracing::entities::AABB, raytracing::entities::AABB>> pair_of_cubes;
-    std::cout << "plane pos: " << best_plane.GetPos() << std::endl;
     try {
         pair_of_cubes = box.cut(best_plane);
     } catch (const std::exception &er) {
@@ -43,7 +41,6 @@ KdTree::build(const std::vector<std::shared_ptr<RenderWrapper>> &objs, entities:
             objl.push_back(obj);
         }
     }
-    std::cout << objr.size() << " " << objl.size() << std::endl;
     std::variant<raytracing::entities::Plane, const std::vector<std::shared_ptr<RenderWrapper>>> var = best_plane;
 
     if (depth < std::thread::hardware_concurrency()) {
@@ -65,20 +62,13 @@ raytracing::entities::Plane
 KdTree::cut(const std::vector<std::shared_ptr<RenderWrapper>> &objs, const raytracing::entities::Axis &axis) {
     std::vector<float> min_list;
     min_list.resize(objs.size());
+    size_t i = 0;
     for (auto &obj_ptr : objs) {
-        min_list.push_back(obj_ptr->box.GetVMin()[axis]);
+        min_list[i++] = obj_ptr->box.GetVMin()[axis];
     }
     //sort that relates to [min_list.begin() + min_list.size() / 2] element
     std::nth_element(min_list.begin(), min_list.begin() + min_list.size() / 2, min_list.end());
-    //std::sort(min_list.begin(), min_list.end());
-    std::cout << "min_list: ";
-    for (auto &el : min_list) {
-        std::cout << el << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "MIDDLE :" << min_list[min_list.size() / 2] << std::endl;
     raytracing::entities::Plane ret(axis, min_list[min_list.size() / 2] + 2 * EPS);
-    std::cout << "fin of cut" << std::endl;
     return ret;
 }
 

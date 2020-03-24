@@ -10,74 +10,68 @@
 #include <future>
 #include <memory>
 
-raytracing::kd_tree::KdTree::Node *raytracing::Render::bin_search_in_tree(const raytracing::entities::Ray &ray,
-                                                                          std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
-    float t_near, t_far;
-    if (tree == nullptr) return nullptr; //if tree is not formed at all
-    if (tree->box.Intersect(ray, t_near, t_far)) {
-        float t_split;
-        auto *plane_ptr = std::get_if<raytracing::entities::Plane>(&tree->plane_or_figures);
-        if (plane_ptr != nullptr) {
-            if (!plane_ptr->Intersect(ray, t_split)) {
-                //ray doesnt intersect with plane
-                //detecting needed child
-                //left
-                if (ray.orig.x + t_near * ray.dir.x < plane_ptr->GetPos()) {
-                    return bin_search_in_tree(ray, tree->child.first);
-                }
-                    //right
-                else {
-                    return bin_search_in_tree(ray, tree->child.second);
-                }
-            }
-            //now there are some different cases:
-            //1) ray intersects only one of two nodes
-            if (t_split >= t_far || t_split < t_near) {
-                //left node is valid
-                if (t_split >= t_far) {
-                    return bin_search_in_tree(ray, tree->child.first);
-                } else {
-                    return bin_search_in_tree(ray, tree->child.second);
-                }
-            }
-                //2) ray intersects both nodes
-            else {
-                /*
-                 *  (В случае если луч пересекает оба дочерних узла ,
-                 *  необходимо сначала поискать пересечение в ближнем узле и если оно не найдено,
-                 *  искать его в дальнем. Так как в общем случае неизвестно, сколько раз произойдет последнее событие(отсутствие пересечения в ближнем узле),
-                 *  необходим стек. Каждый раз, когда луч пересекает оба дочерних узла, адрес дальнего узла, t_near и t_far помещаются в стек
-                 *  и поиск продолжается в ближнем. Если в ближнем узле пересечение не найдено, из стека достаются адрес дальнего узла, t_near, t_far и
-                 *  поиск продолжается в дальнем узле.)
-                 *
-                 */
-                //closer box is from t_near to t_split.
-                //We can find needed child_node by next comparing
-                auto x_near = ray.orig.x + ray.dir.x * t_near;
-                auto x_split = ray.orig.x + ray.dir.x * t_split;
-                raytracing::kd_tree::KdTree::Node *result = nullptr;
-                //left box is closer
-                if (x_near < x_split) {
-                    result = bin_search_in_tree(ray, tree->child.first);
-                    if (result == nullptr) {
-                        result = bin_search_in_tree(ray, tree->child.second);
-                    }
-                }
-                    //right box is closer
-                else {
-                    result = bin_search_in_tree(ray, tree->child.second);
-                    if (result == nullptr) {
-                        result = bin_search_in_tree(ray, tree->child.first);
-                    }
-                }
-
-            }
-        } else {
-            //we are in needed node of tree - it contains figures
-            return tree.get();
+void tree_trace(std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
+    if (tree == nullptr) return;
+    std::cout << "\nOBHOD\n" << std::endl;
+    std::cout << tree->box.Size() << tree->box.GetVMin() << tree->box.GetVMax() << std::endl;
+    auto *obj = std::get_if<const std::vector<std::shared_ptr<raytracing::kd_tree::KdTree::RenderWrapper>>>(
+            &tree->plane_or_figures);
+    if (obj) {
+        std::cout << "всего фигур: " << obj->size() << " штук: " << "vmin=" << tree->box.GetVMin() << "vmax= "
+                  << tree->box.GetVMax() << std::endl;
+        for (auto &p : *obj) {
+            p->obj->print();
         }
+    } else {
+        auto *pl = std::get_if<raytracing::entities::Plane>(&tree->plane_or_figures);
+        std::cout << pl->GetPos();
     }
-    return nullptr;
+    tree_trace(tree->child.first);
+    tree_trace(tree->child.second);
+}
+
+std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float>
+raytracing::Render::bin_search_in_tree(const raytracing::entities::Ray &ray,
+                                       std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
+    float t_near, t_far;
+    if (tree == nullptr) return {}; //if tree is not formed at all
+    if (tree->box.Intersect(ray, t_near, t_far)) {
+        auto *objects = std::get_if<const std::vector<std::shared_ptr<raytracing::kd_tree::KdTree::RenderWrapper>>>(
+                &tree->plane_or_figures);
+        if (objects) {
+            std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float> result;
+            for (const auto &p : *objects) {
+                float dist_i;
+                if (p->obj->ray_intersect(ray, dist_i)) {
+                    result.insert({p->obj, dist_i});
+                }
+            }
+            return result;
+        }
+        auto res1 = tree->child.first ? bin_search_in_tree(ray, tree->child.first)
+                                      : std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float>();
+        auto res2 = tree->child.second ? bin_search_in_tree(ray, tree->child.second)
+                                       : std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float>();
+        auto result = [&res1, &res2]() {
+            std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float> res;
+            for (auto &e : res1){
+                res.insert(e);
+            }
+            for (auto &e : res2){
+                res.insert(e);
+            }
+            return res;
+        }();
+        return result;
+
+        //returning result
+        //FIXME upper code goes throughout all nodes of a tree, checking only those nodes,
+        // which have aabb intersection with ray, and if we find figures there->we are checking
+        // figures on intersection
+        //FIXME now it works a bit incorrectly because a dont know which figure intersected first -> wrong dist of sphere/triangle -> bad shadows and wrong
+        // show of figures -- FIXED with vector of nodes that ray intersects. right now i deleted down code -> maybe not finally
+    }
+    return {};
 }
 
 void raytracing::Render::initialize_kd_tree(std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
@@ -116,37 +110,55 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
     float spheres_dist = std::numeric_limits<float>::max();
     float triangles_dist = std::numeric_limits<float>::max();
     float cubes_dist = std::numeric_limits<float>::max();
+    float checkerboard_dist = std::numeric_limits<float>::max();
 
-    //TODO: here, instead of checking all figures, we should intersection of a ray with kd tree
-    auto needed_node = raytracing::Render::bin_search_in_tree(ray, raytracing::tree);
-    if (needed_node) {
-        //std::cout << "needed node: " << needed_node->box.GetVMin() << " " << needed_node->box.GetVMax() << std::endl;
-        auto *objects = std::get_if<const std::vector<std::shared_ptr<raytracing::kd_tree::KdTree::RenderWrapper>>>(
-                &needed_node->plane_or_figures);
-        for (const auto &p : *objects) {
-            float dist_i;
-            if (p->obj->ray_intersect(ray, dist_i)) {
-                auto &figure_dist = p->obj->NeededDist(spheres_dist, triangles_dist, cubes_dist);
-                if (dist_i < figure_dist) {
-                    figure_dist = dist_i;
-                    p->obj->SetNeededNormHitMaterial(ray, dist_i, N, hit, material);
+    //if we launched tree
+    if (raytracing::tree) {
+        auto needed_figures_and_dists = raytracing::Render::bin_search_in_tree(ray, raytracing::tree);
+        if (needed_figures_and_dists.size() != 0) {
+            for (auto &f : needed_figures_and_dists){
+                auto &figure_dist = f.first->NeededDist(spheres_dist, triangles_dist, cubes_dist);
+                if (f.second < figure_dist) {
+                    figure_dist = f.second;
+                    f.first->SetNeededNormHitMaterial(ray, f.second, N, hit, material);
+                }
+            }
+        } else {
+            //ray doesnt intersect with any of primitives
+            //need to find checkerboard
+            if (fabs(ray.dir.y) > 1e-3) {
+                float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
+                Vec3f pt = ray.orig + ray.dir * d;
+                if (d > 0 && d < spheres_dist && d < triangles_dist) {
+                    checkerboard_dist = d;
+                    hit = pt;
+                    N = Vec3f(0, 1, 0);
+                    material.diffuse_color =
+                            (int(.5 * hit.x + 1000) + int(.5 * hit.z)) & 1 ? Vec3f(.10, .10, .10) : Vec3f(.3, .2, .1);
                 }
             }
         }
     } else {
-        //ray doesnt intersect with any of primitives
-    }
-
-    float checkerboard_dist = std::numeric_limits<float>::max();
-    if (fabs(ray.dir.y) > 1e-3) {
-        float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
-        Vec3f pt = ray.orig + ray.dir * d;
-        if (d > 0 && d < spheres_dist && d < triangles_dist) {
-            checkerboard_dist = d;
-            hit = pt;
-            N = Vec3f(0, 1, 0);
-            material.diffuse_color =
-                    (int(.5 * hit.x + 1000) + int(.5 * hit.z)) & 1 ? Vec3f(.10, .10, .10) : Vec3f(.3, .2, .1);
+        for (const auto &p : figures) {
+            float dist_i;
+            if (p->ray_intersect(ray, dist_i)) {
+                auto &figure_dist = p->NeededDist(spheres_dist, triangles_dist, cubes_dist);
+                if (dist_i < figure_dist) {
+                    figure_dist = dist_i;
+                    p->SetNeededNormHitMaterial(ray, dist_i, N, hit, material);
+                }
+            }
+        }
+        if (fabs(ray.dir.y) > 1e-3) {
+            float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
+            Vec3f pt = ray.orig + ray.dir * d;
+            if (d > 0 && d < spheres_dist && d < triangles_dist) {
+                checkerboard_dist = d;
+                hit = pt;
+                N = Vec3f(0, 1, 0);
+                material.diffuse_color =
+                        (int(.5 * hit.x + 1000) + int(.5 * hit.z)) & 1 ? Vec3f(.10, .10, .10) : Vec3f(.3, .2, .1);
+            }
         }
     }
     return std::min({spheres_dist, checkerboard_dist, cubes_dist, triangles_dist}) < 1000;
@@ -284,35 +296,41 @@ bool Triangle::ray_intersect(const Ray &ray, float &t0) const {
 }// namespace entities
 
 
-Vec3f anti_aliasing (double dir_x, double dir_y, double dir_z, 
-                     const std::vector<std::unique_ptr<const entities::Figure>> &figures,
-                     const std::vector<entities::Light> &lights){
+Vec3f anti_aliasing(double dir_x, double dir_y, double dir_z,
+                    const std::vector<std::unique_ptr<const entities::Figure>> &figures,
+                    const std::vector<entities::Light> &lights) {
     Vec3f anti_alias = Vec3f(0, 0, 0);
-    for (int k = 0; k < 5; ++k){
+    for (int k = 0; k < 5; ++k) {
         switch (k % 5) {
-            case 0: anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
-                                Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z).normalize()), figures, lights);
-                    break;
-            case 1: anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
-                                Vec3f(0, 0, 0), Vec3f(dir_x + 0.5, dir_y, dir_z).normalize()), figures, lights);
-                    break;
-            case 2: anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
-                                Vec3f(0, 0, 0), Vec3f(dir_x, dir_y + 0.5, dir_z).normalize()), figures, lights);
-                    break;
-            case 3: anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
-                                Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z + 0.5).normalize()), figures, lights);
-                    break;
-            default: anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
-                                Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z - 0.5).normalize()), figures, lights);
-                    break;
+            case 0:
+                anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
+                        Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z).normalize()), figures, lights);
+                break;
+            case 1:
+                anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
+                        Vec3f(0, 0, 0), Vec3f(dir_x + 0.5, dir_y, dir_z).normalize()), figures, lights);
+                break;
+            case 2:
+                anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
+                        Vec3f(0, 0, 0), Vec3f(dir_x, dir_y + 0.5, dir_z).normalize()), figures, lights);
+                break;
+            case 3:
+                anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
+                        Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z + 0.5).normalize()), figures, lights);
+                break;
+            default:
+                anti_alias = anti_alias + entities::casting_ray::cast_ray(entities::Ray(
+                        Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z - 0.5).normalize()), figures, lights);
+                break;
         }
     }
-    return (anti_alias / 5);             
+    return (anti_alias / 5);
 }
 
 
 void Render::render(const char *out_file_path, const std::vector<std::unique_ptr<const entities::Figure>> &figures,
                     const std::vector<entities::Light> &lights) {
+    //tree_trace(raytracing::tree);
     const int width = 1920;
     const int height = 1080;
     const float fov = M_PI / 3.0; ///that's a viewing angle = pi/3
@@ -320,16 +338,20 @@ void Render::render(const char *out_file_path, const std::vector<std::unique_ptr
     const auto amount_of_threads = std::thread::hardware_concurrency(); //because of asynchronius tasks we can make it a bit bigger
     std::vector<std::future<void>> tasks(amount_of_threads);
     size_t portion = height / amount_of_threads;
-    for (size_t start = 0, finish = portion, index = 0; index < amount_of_threads; ++index, start = finish, finish = index == amount_of_threads - 1 ? height : finish + portion) {
-        tasks[index] = std::async(std::launch::async, [&, start, finish, width, height, fov](){
-           for (size_t j = start; j < finish; ++j){
-               for (size_t i = 0; i < width; ++i){
-                   auto dir_x = (i + 0.5) - width / 2.;
-                   auto dir_y = -(j + 0.5) + height / 2.;    // this flips the image at the same time
-                   auto dir_z = -height / (2. * tan(fov / 2.));
-                   framebuffer[i + j * width] = raytracing::anti_aliasing(dir_x, dir_y, dir_z, figures, lights);
-               }
-           }
+    for (size_t start = 0, finish = portion, index = 0; index < amount_of_threads; ++index, start = finish, finish =
+            index == amount_of_threads - 1 ? height : finish + portion) {
+        tasks[index] = std::async(std::launch::async, [&, start, finish, width, height, fov, this]() {
+            for (size_t j = start; j < finish; ++j) {
+                for (size_t i = 0; i < width; ++i) {
+                    auto dir_x = (i + 0.5) - width / 2.;
+                    auto dir_y = -(j + 0.5) + height / 2.;    // this flips the image at the same time
+                    auto dir_z = -height / (2. * tan(fov / 2.));
+                    //FIXME needs check on scene 3, if scene == 3 then without anti_aliasing
+                    framebuffer[i + j * width] = entities::casting_ray::cast_ray(entities::Ray(
+                            Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z).normalize()), figures, lights);
+                    //framebuffer[i + j * width] = raytracing::anti_aliasing(dir_x, dir_y, dir_z, figures, lights);
+                }
+            }
         });
     }
     for (auto &&task : tasks) {
