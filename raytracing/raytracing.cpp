@@ -57,11 +57,11 @@ Vec3f refract(const Vec3f &I, const Vec3f &N, const float eta_t, const float eta
                                                    sqrtf(k)); // k<0 = total reflection, no ray to refract. I refract it anyways, this has no physical meaning
 }
 
-bool Boardscene(int scene_id,float d, Vec3f point)
+bool Boardscene(int scene_id,float d, Vec3f point, std::vector <float> Distance)
 {
-    float spheres_dist = std::numeric_limits<float>::max();
-    float triangles_dist = std::numeric_limits<float>::max();
-    float cubes_dist = std::numeric_limits<float>::max();
+    float spheres_dist = Distance[0];
+    float triangles_dist = Distance[1];
+    float cubes_dist = Distance[2];
     switch (scene_id)
     {
         case 1:
@@ -92,7 +92,8 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
     if (fabs(ray.dir.y) > 1e-3) {
         float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
         Vec3f pt = ray.orig + ray.dir * d;
-        if (Boardscene(picture::Picture::scene_id,d,pt)){
+        auto Dist = std::vector<float>{spheres_dist,triangles_dist,cubes_dist};
+        if (Boardscene(picture::Picture::scene_id,d,pt,Dist)){
             checkerboard_dist = d;
             hit = pt;
             N = Vec3f(0, 1, 0);
@@ -268,6 +269,33 @@ Vec3f anti_aliasing (double dir_x, double dir_y, double dir_z,
     return (anti_alias / 5);             
 }
 
+void SavingBmpPpm (std::string file_name, int width, int height, std::vector<Vec3f> framebuffer){
+    std::ofstream ofs; // save the framebuffer to file
+    ofs.open(file_name, std::ios::binary);
+    ofs << "P6\n" << width << " " << height << "\n255\n";
+    for (size_t i = 0; i < height * width; ++i) {
+        Vec3f &c = framebuffer[i];
+        float max = std::max(c[0], std::max(c[1], c[2]));
+        if (max > 1) c = c * (1. / max);
+        for (size_t j = 0; j < 3; ++j) {
+            ofs << (char) (255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
+        }
+    }
+    ofs.close();
+}
+
+void SavingJpg (const char* file_name, int width, int height, std::vector<Vec3f> framebuffer){
+    std::vector<unsigned char> Npixmap(width*height*3);
+    for (size_t i = 0; i < height*width; ++i) {
+        Vec3f &c = framebuffer[i];
+        float max = std::max(c[0], std::max(c[1], c[2]));
+        if (max>1) c = c*(1./max);
+        for (size_t j = 0; j<3; j++) {
+            Npixmap[i*3+j] = (unsigned char)(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
+        }
+    }
+    stbi_write_jpg(file_name, width, height, 3, Npixmap.data(), 100);  
+}
 
 void render(const char *out_file_path, const std::vector<std::unique_ptr<const entities::Figure>> &figures,
             const std::vector<entities::Light> &lights) {
@@ -308,20 +336,24 @@ void render(const char *out_file_path, const std::vector<std::unique_ptr<const e
     for (auto &&task : tasks) {
         task.get();
     }
-
-//    std::ofstream ofs; // save the framebuffer to file
-//    ofs.open(out_file_path, std::ios::binary);
-//    ofs << "P6\n" << width << " " << height << "\n255\n";
-    std::vector<unsigned char> Npixmap(width*height*3);
-    for (size_t i = 0; i < height*width; ++i) {
-        Vec3f &c = framebuffer[i];
-        float max = std::max(c[0], std::max(c[1], c[2]));
-        if (max>1) c = c*(1./max);
-        for (size_t j = 0; j<3; j++) {
-            Npixmap[i*3+j] = (unsigned char)(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
+    int image_format;
+    if (!strcmp (out_file_path + strlen(out_file_path) - 4, ".jpg")){
+        image_format = 1; 
+    } else { 
+        image_format = 2;
+    };
+    try {
+        switch (image_format) {
+            case 1: raytracing::SavingJpg(out_file_path, width, height, framebuffer);
+                    break;
+            case 2: raytracing::SavingBmpPpm(out_file_path, width, height, framebuffer);
+                    break;
+            default: throw std::runtime_error("Incorrect picture format!");
         }
     }
-    stbi_write_jpg("outfile.jpg", width, height, 3, Npixmap.data(), 100);
+    catch (const std::exception &er) {
+        std::cout << er.what();
+    }
 }
 
 }// namespace raytracing
