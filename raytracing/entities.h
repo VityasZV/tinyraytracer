@@ -37,7 +37,7 @@ struct Light {
     /// Light is a source of light
     /// \param p - position of light source
     /// \param i - intensity of light source
-    Light(const Vec3f &p, const float i) : position(p), intensity(i) {}
+     Light(const Vec3f &p, const float i) : position(p), intensity(i) {}
 };
 
 struct Ray {

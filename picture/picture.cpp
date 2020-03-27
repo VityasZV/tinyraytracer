@@ -8,8 +8,10 @@
 #include <sstream>
 #include <future>
 #include <cstring>
+#include <string.h>
 
-picture::Picture::Picture(const int argc, const char **argv) {
+
+picture::Picture::  Picture(const int argc, const char **argv) {
     PreparingOutFileAndScene(argc, argv);
     for (const auto &p : spheres_params) {
         figures.emplace_back(std::make_unique<raytracing::entities::Sphere>(p.coordinates, p.radius, p.material));
@@ -31,9 +33,9 @@ picture::Picture::Picture(const int argc, const char **argv) {
     }
     triangle_params.clear();
     //here comes the duck
-    MakeTriangleMash("../duck.obj");
+//    MakeTriangleMash("../duck.obj");
     //here comes the deer
-    MakeTriangleMash("../deer.obj");
+//    MakeTriangleMash("../deer.obj");
 }
 
 void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
@@ -53,6 +55,53 @@ void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
         out_file_path = cmd_line_params["-out"];
     if (cmd_line_params.find("-scene") != cmd_line_params.end())
         scene_id = atoi(cmd_line_params["-scene"].c_str());
+    switch (scene_id) {
+        case 1:
+            spheres_params = {
+                    {Vec3f(-3, 0, -16),      2, Materials[MaterialName::ivory]},
+                    {Vec3f(-1.0, -1.5, -12), 2, Materials[MaterialName::glass]},
+                    {Vec3f(1.5, -0.5, -18),  3, Materials[MaterialName::red_rubber]},
+                    {Vec3f(7, 5, -18),       4, Materials[MaterialName::mirror]},
+                    {Vec3f(-8, 5, -18),      4, Materials[MaterialName::mirror]}
+            };
+            triangle_params = {
+                    //dont forget about right trio while adding params!!!
+                    //front
+                    {Vec3f(-6, 0, -6), Vec3f(-5, 0, -6), Vec3f(-5, 2, -6), Materials[MaterialName::red_rubber]},
+                    {Vec3f(-5, 2, -6), Vec3f(-6, 2, -6), Vec3f(-6, 0, -6), Materials[MaterialName::red_rubber]},
+                    //back
+                    {Vec3f(-5, 0, -6), Vec3f(-6, 0, -6), Vec3f(-5, 0, -8), Materials[MaterialName::red_rubber]},
+                    {Vec3f(-5, 0, -8), Vec3f(-6, 0, -6), Vec3f(-6, 0, -8), Materials[MaterialName::red_rubber]},
+                    //up
+                    {Vec3f(-6, 2, -6), Vec3f(-5, 2, -6), Vec3f(-5, 2, -8), Materials[MaterialName::red_rubber]},
+                    {Vec3f(-5, 2, -8), Vec3f(-6, 2, -8), Vec3f(-6, 2, -6), Materials[MaterialName::red_rubber]},
+                    //left
+                    {Vec3f(-6, 2, -8), Vec3f(-6, 2, -6), Vec3f(-6, 0, -6), Materials[MaterialName::red_rubber]},
+                    {Vec3f(-6, 0, -8), Vec3f(-6, 2, -8), Vec3f(-6, 0, -6), Materials[MaterialName::red_rubber]},
+                    //right
+                    {Vec3f(-5, 0, -8), Vec3f(-5, 2, -8), Vec3f(-5, 2, -6), Materials[MaterialName::red_rubber]},
+                    {Vec3f(-5, 0, -8), Vec3f(-5, 2, -6), Vec3f(-5, 0, -6), Materials[MaterialName::red_rubber]},
+                    //down
+                    {Vec3f(-6, 2, -8), Vec3f(-6, 0, -8), Vec3f(-5, 0, -8), Materials[MaterialName::red_rubber]},
+                    {Vec3f(-6, 2, -8), Vec3f(-5, 2, -8), Vec3f(-5, 0, -8), Materials[MaterialName::red_rubber]},
+
+            };
+            break;
+        case 2:
+            spheres_params = {
+                    {Vec3f(-10, -2.5, -10),    2, Materials[MaterialName::red_rubber]},
+                    {Vec3f(-10, -2.5, -30), 2, Materials[MaterialName::red_rubber]},
+                    {Vec3f(10, -2.5, -10),  2, Materials[MaterialName::red_rubber]},
+                    {Vec3f(10, -2.5, -30),      2, Materials[MaterialName::red_rubber]},
+                    {Vec3f(-8, 5, -18),     4, Materials[MaterialName::mirror]},
+                    {Vec3f(7, 5, -18),      4, Materials[MaterialName::mirror]}
+
+            };
+            break;
+        case 3:
+        default:
+            throw std::runtime_error("Incorrect scene number!");
+    }
 }
 
 void picture::Picture::MakeTriangleMash(const char *file_name) {

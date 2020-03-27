@@ -1,4 +1,5 @@
 #include "raytracing.h"
+#include "../picture/picture.h"
 
 #include <cmath>
 #include <limits>
@@ -8,6 +9,25 @@
 #include <future>
 #include <memory>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+struct BackGround{
+    static void GetData(int PicW,int PicH,std::vector<Vec3f> PicEnv)
+    {
+        width=PicW;
+        height=PicH;
+        envmap=PicEnv;
+    }
+    static int width;
+    static int height;
+    static std::vector<Vec3f> envmap;
+};
+
+int BackGround::height=0;
+int BackGround::width=0;
+std::vector<Vec3f> BackGround::envmap{};
 //TODO : description
 /// reflect
 /// \param I
@@ -16,6 +36,9 @@
 Vec3f reflect(const Vec3f &I, const Vec3f &N) {
     return I - N * 2.f * (I * N);
 }
+
+int picture::Picture::scene_id=2;
+
 
 //TODO : description
 /// refract
@@ -34,6 +57,19 @@ Vec3f refract(const Vec3f &I, const Vec3f &N, const float eta_t, const float eta
                                                    sqrtf(k)); // k<0 = total reflection, no ray to refract. I refract it anyways, this has no physical meaning
 }
 
+bool Boardscene(int scene_id,float d, Vec3f point, std::vector <float> Distance)
+{
+    float spheres_dist = Distance[0];
+    float triangles_dist = Distance[1];
+    float cubes_dist = Distance[2];
+    switch (scene_id)
+    {
+        case 1:
+            return d > 0 && d < spheres_dist && d < triangles_dist;
+        case 2:
+            return d > 0 && fabs(point.x) < 10 && point.z < -10 && point.z > -30 && d < spheres_dist && d < triangles_dist;
+    }
+}
 bool scene_intersect(const raytracing::entities::Ray &ray,
                      const std::vector<std::unique_ptr<const raytracing::entities::Figure>> &figures,
                      Vec3f &hit, Vec3f &N, raytracing::entities::Material &material) {
@@ -56,7 +92,8 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
     if (fabs(ray.dir.y) > 1e-3) {
         float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
         Vec3f pt = ray.orig + ray.dir * d;
-        if (d > 0 && d < spheres_dist && d < triangles_dist) {
+        auto Dist = std::vector<float>{spheres_dist,triangles_dist,cubes_dist};
+        if (Boardscene(picture::Picture::scene_id,d,pt,Dist)){
             checkerboard_dist = d;
             hit = pt;
             N = Vec3f(0, 1, 0);
@@ -79,8 +116,15 @@ Vec3f casting_ray::cast_ray(const Ray &ray,
     Material material;
 
     if (depth > 4 || !scene_intersect(ray, figures, point, N, material)) {
-        return Vec3f(0, float(127.0 / 255), float(255.0 / 255)); // background color
-    }
+        if (picture::Picture::scene_id==1)
+            return Vec3f(0, float(127.0 / 255), float(255.0 / 255));
+        else
+        {
+            int a = std::max(0, std::min(BackGround::width -1, static_cast<int>((atan2(ray.dir.z, ray.dir.x)/(2*M_PI) + .5)*BackGround::width)));
+            int b = std::max(0, std::min(BackGround::height-1, static_cast<int>(acos(ray.dir.y)/M_PI*BackGround::height)));
+            return BackGround::envmap[a+b*BackGround::width];
+        }
+    } // background color
 
     ///TODO make just 2 variables
     Vec3f reflect_dir = reflect(ray.dir, N).normalize();
@@ -225,13 +269,55 @@ Vec3f anti_aliasing (double dir_x, double dir_y, double dir_z,
     return (anti_alias / 5);             
 }
 
+void SavingBmpPpm (std::string file_name, int width, int height, std::vector<Vec3f> framebuffer){
+    std::ofstream ofs; // save the framebuffer to file
+    ofs.open(file_name, std::ios::binary);
+    ofs << "P6\n" << width << " " << height << "\n255\n";
+    for (size_t i = 0; i < height * width; ++i) {
+        Vec3f &c = framebuffer[i];
+        float max = std::max(c[0], std::max(c[1], c[2]));
+        if (max > 1) c = c * (1. / max);
+        for (size_t j = 0; j < 3; ++j) {
+            ofs << (char) (255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
+        }
+    }
+    ofs.close();
+}
+
+void SavingJpg (const char* file_name, int width, int height, std::vector<Vec3f> framebuffer){
+    std::vector<unsigned char> Npixmap(width*height*3);
+    for (size_t i = 0; i < height*width; ++i) {
+        Vec3f &c = framebuffer[i];
+        float max = std::max(c[0], std::max(c[1], c[2]));
+        if (max>1) c = c*(1./max);
+        for (size_t j = 0; j<3; j++) {
+            Npixmap[i*3+j] = (unsigned char)(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
+        }
+    }
+    stbi_write_jpg(file_name, width, height, 3, Npixmap.data(), 100);  
+}
 
 void render(const char *out_file_path, const std::vector<std::unique_ptr<const entities::Figure>> &figures,
             const std::vector<entities::Light> &lights) {
     const int width = 1920;
     const int height = 1080;
+    int env_width,env_height,n=-1;
     const float fov = M_PI / 3.0; ///that's a viewing angle = pi/3
     std::vector<Vec3f> framebuffer(width * height);
+    unsigned char *pixmap = stbi_load("../3d.jpg", &env_width, &env_height, &n, STBI_rgb);
+    if (!pixmap || 3!=n) {
+        std::cerr << "Error: can not load the environment map" << std::endl;
+        exit(-1);
+    }
+    BackGround::GetData(env_width,env_height,std::vector<Vec3f>(env_width*env_height));
+    for (int j = BackGround::height-1; j>=0 ; j--) {
+        for (int i = 0; i < BackGround::width; i++) {
+            BackGround::envmap[i + j * BackGround::width] =
+                    Vec3f(pixmap[(i + j * BackGround::width) * 3 + 0], pixmap[(i + j * BackGround::width) * 3 + 1],
+                          pixmap[(i + j * BackGround::width) * 3 + 2]) * (1 / 255.);
+        }
+    }
+    stbi_image_free(pixmap);
     const auto amount_of_threads = std::thread::hardware_concurrency(); //because of asynchronius tasks we can make it a bit bigger
     std::vector<std::future<void>> tasks(amount_of_threads);
     size_t portion = height / amount_of_threads;
@@ -250,19 +336,24 @@ void render(const char *out_file_path, const std::vector<std::unique_ptr<const e
     for (auto &&task : tasks) {
         task.get();
     }
-
-    std::ofstream ofs; // save the framebuffer to file
-    ofs.open(out_file_path, std::ios::binary);
-    ofs << "P6\n" << width << " " << height << "\n255\n";
-    for (size_t i = 0; i < height * width; ++i) {
-        Vec3f &c = framebuffer[i];
-        float max = std::max(c[0], std::max(c[1], c[2]));
-        if (max > 1) c = c * (1. / max);
-        for (size_t j = 0; j < 3; ++j) {
-            ofs << (char) (255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
+    int image_format;
+    if (!strcmp (out_file_path + strlen(out_file_path) - 4, ".jpg")){
+        image_format = 1; 
+    } else { 
+        image_format = 2;
+    };
+    try {
+        switch (image_format) {
+            case 1: raytracing::SavingJpg(out_file_path, width, height, framebuffer);
+                    break;
+            case 2: raytracing::SavingBmpPpm(out_file_path, width, height, framebuffer);
+                    break;
+            default: throw std::runtime_error("Incorrect picture format!");
         }
     }
-    ofs.close();
+    catch (const std::exception &er) {
+        std::cout << er.what();
+    }
 }
 
 }// namespace raytracing
