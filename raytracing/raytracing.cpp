@@ -136,9 +136,9 @@ bool Boardscene(int scene_id,float d, Vec3f point, std::vector <float> Distance)
     switch (scene_id)
     {
         case 1:
-            return d > 0 && d < spheres_dist && d < triangles_dist;
+            return d > 0 && d < spheres_dist && d < triangles_dist && d < cubes_dist;
         case 2:
-            return d > 0 && fabs(point.x) < 10 && point.z < -10 && point.z > -30 && d < spheres_dist && d < triangles_dist;
+            return d > 0 && fabs(point.x) < 10 && point.z < -10 && point.z > -30 && d < spheres_dist && d < triangles_dist && d < cubes_dist;
     }
 }
 bool scene_intersect(const raytracing::entities::Ray &ray,
@@ -166,7 +166,8 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
             if (fabs(ray.dir.y) > 1e-3) {
                 float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
                 Vec3f pt = ray.orig + ray.dir * d;
-                if (d > 0 && d < spheres_dist && d < triangles_dist && d < cubes_dist) {
+                auto Dist = std::vector<float>{spheres_dist,triangles_dist,cubes_dist};
+                if (Boardscene(picture::Picture::scene_id,d,pt,Dist)){ 
                     checkerboard_dist = d;
                     hit = pt;
                     N = Vec3f(0, 1, 0);
@@ -186,34 +187,17 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
                 }
             }
         }
-<<<<<<< HEAD
-    } else {
-        //ray doesnt intersect with any of primitives
-    }
-
-    float checkerboard_dist = std::numeric_limits<float>::max();
-    if (fabs(ray.dir.y) > 1e-3) {
-        float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
-        Vec3f pt = ray.orig + ray.dir * d;
-        auto Dist = std::vector<float>{spheres_dist,triangles_dist,cubes_dist};
-        if (Boardscene(picture::Picture::scene_id,d,pt,Dist)){
-            checkerboard_dist = d;
-            hit = pt;
-            N = Vec3f(0, 1, 0);
-            material.diffuse_color =
-                    (int(.5 * hit.x + 1000) + int(.5 * hit.z)) & 1 ? Vec3f(.10, .10, .10) : Vec3f(.3, .2, .1);
-=======
         if (fabs(ray.dir.y) > 1e-3) {
             float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
             Vec3f pt = ray.orig + ray.dir * d;
-            if (d > 0 && d < spheres_dist && d < triangles_dist && d < cubes_dist) {
+            auto Dist = std::vector<float>{spheres_dist,triangles_dist,cubes_dist};
+            if (Boardscene(picture::Picture::scene_id,d,pt,Dist)){ 
                 checkerboard_dist = d;
                 hit = pt;
                 N = Vec3f(0, 1, 0);
                 material.diffuse_color =
                         (int(.5 * hit.x + 1000) + int(.5 * hit.z)) & 1 ? Vec3f(.10, .10, .10) : Vec3f(.3, .2, .1);
             }
->>>>>>> Tree fix (#18)
         }
     }
     return std::min({spheres_dist, checkerboard_dist, cubes_dist, triangles_dist}) < 1000;

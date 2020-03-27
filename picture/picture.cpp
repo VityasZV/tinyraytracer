@@ -47,14 +47,14 @@ picture::Picture::  Picture(const int argc, const char **argv) {
     const auto duck_shift3 = Vec3f{0, 0, -10};
 
 
-    MakeTriangleMash("../duck.obj", Vec3f(0,0,0));
-    MakeTriangleMash("../duck.obj", duck_shift1);
-    MakeTriangleMash("../duck.obj", duck_shift2);
-    MakeTriangleMash("../duck.obj", duck_shift3);
+    // MakeTriangleMash("../duck.obj", Vec3f(0,0,0));
+    // MakeTriangleMash("../duck.obj", duck_shift1);
+    // MakeTriangleMash("../duck.obj", duck_shift2);
+    // MakeTriangleMash("../duck.obj", duck_shift3);
     //here comes the deer
     //MakeTriangleMash("../deer.obj");
     //std::cout << "Всего примитивов " << figures.size() << std::endl;
-    //FormKdTree();
+    FormKdTree();
 }
 
 void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
