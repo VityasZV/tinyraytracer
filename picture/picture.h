@@ -62,6 +62,7 @@ class Picture {
 private:
     std::vector<SphereParams> spheres_params;
     std::vector<TriangleParams> triangle_params;
+
     void PreparingOutFileAndScene(int argc, const char **argv);
 
     std::unordered_map<MaterialName, raytracing::entities::Material> Materials{
@@ -85,7 +86,7 @@ private:
             {Vec3f(-3, 0, -3), Vec3f(1, 4, -7), Materials[MaterialName::mirror]}
     };
 
-    void MakeTriangleMash(const char *file_name, const Vec3f& shift);
+    void MakeTriangleMash(const char *file_name, const Vec3f &shift);
 
     void FormKdTree();
 
@@ -95,6 +96,7 @@ public:
 
 
     Picture(const int argc, const char **argv);
+
     ~Picture() = default;
 
     std::vector<raytracing::entities::Light> lights;

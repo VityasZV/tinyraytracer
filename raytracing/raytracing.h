@@ -11,6 +11,7 @@
 
 namespace raytracing {
 static std::shared_ptr<kd_tree::KdTree::Node> tree;
+
 struct BinParams {
     float &spheres_dist;
     float &triangles_dist;
@@ -18,20 +19,23 @@ struct BinParams {
     Vec3f &hit;
     Vec3f &N;
     raytracing::entities::Material &material;
+
     BinParams(
-    float &spheres_dist,
-    float &triangles_dist,
-    float &cubes_dist,
-    Vec3f &hit,
-    Vec3f &N,
-    raytracing::entities::Material &material): spheres_dist(spheres_dist), triangles_dist(triangles_dist), cubes_dist(cubes_dist), material(material),
-    hit(hit), N(N){}
+            float &spheres_dist,
+            float &triangles_dist,
+            float &cubes_dist,
+            Vec3f &hit,
+            Vec3f &N,
+            raytracing::entities::Material &material) : spheres_dist(spheres_dist), triangles_dist(triangles_dist),
+                                                        cubes_dist(cubes_dist), material(material),
+                                                        hit(hit), N(N) {}
 };
 
 class Render {
 
 public:
     void initialize_kd_tree(std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree);
+
     static std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float>
     bin_search_in_tree(const raytracing::entities::Ray &ray, std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree);
 
@@ -43,7 +47,6 @@ public:
                 const std::vector<std::unique_ptr<const entities::Figure>> &figures,
                 const std::vector<entities::Light> &lights);
 };
-
 
 
 }//namespace raytracing

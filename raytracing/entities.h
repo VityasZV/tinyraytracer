@@ -47,7 +47,7 @@ struct Light {
     /// Light is a source of light
     /// \param p - position of light source
     /// \param i - intensity of light source
-     Light(const Vec3f &p, const float i) : position(p), intensity(i) {}
+    Light(const Vec3f &p, const float i) : position(p), intensity(i) {}
 };
 
 struct Ray {
@@ -136,26 +136,24 @@ public:
     //boolshit
 
     bool Intersect(const Ray &ray, float &t_near, float &t_far) const {
-        float t1 = (v_min.x - ray.orig.x)*ray.invdir.x;
-        float t2 = (v_max.x - ray.orig.x)*ray.invdir.x;
-        float t3 = (v_min.y - ray.orig.y)*ray.invdir.y;
-        float t4 = (v_max.y - ray.orig.y)*ray.invdir.y;
-        float t5 = (v_min.z - ray.orig.z)*ray.invdir.z;
-        float t6 = (v_max.z - ray.orig.z)*ray.invdir.z;
+        float t1 = (v_min.x - ray.orig.x) * ray.invdir.x;
+        float t2 = (v_max.x - ray.orig.x) * ray.invdir.x;
+        float t3 = (v_min.y - ray.orig.y) * ray.invdir.y;
+        float t4 = (v_max.y - ray.orig.y) * ray.invdir.y;
+        float t5 = (v_min.z - ray.orig.z) * ray.invdir.z;
+        float t6 = (v_max.z - ray.orig.z) * ray.invdir.z;
         float t = 0;
         t_near = std::max(std::max(std::min(t1, t2), std::min(t3, t4)), std::min(t5, t6));
         t_far = std::min(std::min(std::max(t1, t2), std::max(t3, t4)), std::max(t5, t6));
 
         // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-        if (t_far < 0)
-        {
+        if (t_far < 0) {
             t = t_far;
             return false;
         }
 
         // if tmin > tmax, ray doesn't intersect AABB
-        if (t_near> t_far)
-        {
+        if (t_near > t_far) {
             t = t_far;
             return false;
         }
@@ -339,7 +337,7 @@ public:
     void SetNeededNormHitMaterial(const Ray &ray, const float &dist_i, Vec3f &n, Vec3f &h, Material &m) const override {
         h = ray.orig + ray.dir * dist_i;
         //TODO - неверно, надо разобраться
-        n = (h - (bounds[0] + bounds[1])/2).normalize();
+        n = (h - (bounds[0] + bounds[1]) / 2).normalize();
         m = GetMaterial();
     }
 

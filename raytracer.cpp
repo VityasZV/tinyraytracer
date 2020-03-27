@@ -5,10 +5,8 @@
 #include <variant>
 
 
-
 int main(int argc, const char **argv) {
-    try
-    {
+    try {
         picture::Picture my_pic(argc, argv);
         raytracing::Render rendering_of_picture;
         rendering_of_picture.initialize_kd_tree(my_pic.kd_tree);

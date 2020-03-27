@@ -12,23 +12,27 @@
 #include <memory>
 
 #define STB_IMAGE_IMPLEMENTATION
+
 #include "stb_image.h"
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+
 #include "stb_image_write.h"
-struct BackGround{
-    static void GetData(int PicW,int PicH,std::vector<Vec3f> PicEnv)
-    {
-        width=PicW;
-        height=PicH;
-        envmap=PicEnv;
+
+struct BackGround {
+    static void GetData(int PicW, int PicH, std::vector<Vec3f> PicEnv) {
+        width = PicW;
+        height = PicH;
+        envmap = PicEnv;
     }
+
     static int width;
     static int height;
     static std::vector<Vec3f> envmap;
 };
 
-int BackGround::height=0;
-int BackGround::width=0;
+int BackGround::height = 0;
+int BackGround::width = 0;
 std::vector<Vec3f> BackGround::envmap{};
 
 void tree_trace(std::shared_ptr<raytracing::kd_tree::KdTree::Node> tree) {
@@ -75,10 +79,10 @@ raytracing::Render::bin_search_in_tree(const raytracing::entities::Ray &ray,
                                        : std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float>();
         auto result = [&res1, &res2]() {
             std::unordered_map<std::shared_ptr<const raytracing::entities::Figure>, float> res;
-            for (auto &e : res1){
+            for (auto &e : res1) {
                 res.insert(e);
             }
-            for (auto &e : res2){
+            for (auto &e : res2) {
                 res.insert(e);
             }
             return res;
@@ -108,7 +112,7 @@ Vec3f reflect(const Vec3f &I, const Vec3f &N) {
     return I - N * 2.f * (I * N);
 }
 
-int picture::Picture::scene_id=2;
+int picture::Picture::scene_id = 2;
 
 
 //TODO : description
@@ -128,19 +132,19 @@ Vec3f refract(const Vec3f &I, const Vec3f &N, const float eta_t, const float eta
                                                    sqrtf(k)); // k<0 = total reflection, no ray to refract. I refract it anyways, this has no physical meaning
 }
 
-bool Boardscene(int scene_id,float d, Vec3f point, std::vector <float> Distance)
-{
+bool Boardscene(int scene_id, float d, Vec3f point, std::vector<float> Distance) {
     float spheres_dist = Distance[0];
     float triangles_dist = Distance[1];
     float cubes_dist = Distance[2];
-    switch (scene_id)
-    {
+    switch (scene_id) {
         case 1:
             return d > 0 && d < spheres_dist && d < triangles_dist && d < cubes_dist;
         case 2:
-            return d > 0 && fabs(point.x) < 10 && point.z < -10 && point.z > -30 && d < spheres_dist && d < triangles_dist && d < cubes_dist;
+            return d > 0 && fabs(point.x) < 10 && point.z < -10 && point.z > -30 && d < spheres_dist &&
+                   d < triangles_dist && d < cubes_dist;
     }
 }
+
 bool scene_intersect(const raytracing::entities::Ray &ray,
                      const std::vector<std::unique_ptr<const raytracing::entities::Figure>> &figures,
                      Vec3f &hit, Vec3f &N, raytracing::entities::Material &material) {
@@ -153,7 +157,7 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
     if (raytracing::tree) {
         auto needed_figures_and_dists = raytracing::Render::bin_search_in_tree(ray, raytracing::tree);
         if (needed_figures_and_dists.size() != 0) {
-            for (auto &f : needed_figures_and_dists){
+            for (auto &f : needed_figures_and_dists) {
                 auto &figure_dist = f.first->NeededDist(spheres_dist, triangles_dist, cubes_dist);
                 if (f.second < figure_dist) {
                     figure_dist = f.second;
@@ -166,8 +170,8 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
             if (fabs(ray.dir.y) > 1e-3) {
                 float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
                 Vec3f pt = ray.orig + ray.dir * d;
-                auto Dist = std::vector<float>{spheres_dist,triangles_dist,cubes_dist};
-                if (Boardscene(picture::Picture::scene_id,d,pt,Dist)){ 
+                auto Dist = std::vector<float>{spheres_dist, triangles_dist, cubes_dist};
+                if (Boardscene(picture::Picture::scene_id, d, pt, Dist)) {
                     checkerboard_dist = d;
                     hit = pt;
                     N = Vec3f(0, 1, 0);
@@ -190,8 +194,8 @@ bool scene_intersect(const raytracing::entities::Ray &ray,
         if (fabs(ray.dir.y) > 1e-3) {
             float d = -(ray.orig.y + 4) / ray.dir.y; // the checkerboard plane has equation y = -4
             Vec3f pt = ray.orig + ray.dir * d;
-            auto Dist = std::vector<float>{spheres_dist,triangles_dist,cubes_dist};
-            if (Boardscene(picture::Picture::scene_id,d,pt,Dist)){ 
+            auto Dist = std::vector<float>{spheres_dist, triangles_dist, cubes_dist};
+            if (Boardscene(picture::Picture::scene_id, d, pt, Dist)) {
                 checkerboard_dist = d;
                 hit = pt;
                 N = Vec3f(0, 1, 0);
@@ -215,13 +219,15 @@ Vec3f casting_ray::cast_ray(const Ray &ray,
     Material material;
 
     if (depth > 4 || !scene_intersect(ray, figures, point, N, material)) {
-        if (picture::Picture::scene_id==1)
+        if (picture::Picture::scene_id == 1)
             return Vec3f(0, float(127.0 / 255), float(255.0 / 255));
-        else
-        {
-            int a = std::max(0, std::min(BackGround::width -1, static_cast<int>((atan2(ray.dir.z, ray.dir.x)/(2*M_PI) + .5)*BackGround::width)));
-            int b = std::max(0, std::min(BackGround::height-1, static_cast<int>(acos(ray.dir.y)/M_PI*BackGround::height)));
-            return BackGround::envmap[a+b*BackGround::width];
+        else {
+            int a = std::max(0, std::min(BackGround::width - 1,
+                                         static_cast<int>((atan2(ray.dir.z, ray.dir.x) / (2 * M_PI) + .5) *
+                                                          BackGround::width)));
+            int b = std::max(0, std::min(BackGround::height - 1,
+                                         static_cast<int>(acos(ray.dir.y) / M_PI * BackGround::height)));
+            return BackGround::envmap[a + b * BackGround::width];
         }
     } // background color
 
@@ -273,26 +279,24 @@ bool Sphere::ray_intersect(const Ray &ray, float &t0) const {
 
 //TODO needs testing
 bool Cube::ray_intersect(const Ray &ray, float &t0) const {
-    float t1 = (bounds[0].x - ray.orig.x)*ray.invdir.x;
-    float t2 = (bounds[1].x - ray.orig.x)*ray.invdir.x;
-    float t3 = (bounds[0].y - ray.orig.y)*ray.invdir.y;
-    float t4 = (bounds[1].y - ray.orig.y)*ray.invdir.y;
-    float t5 = (bounds[0].z - ray.orig.z)*ray.invdir.z;
-    float t6 = (bounds[1].z - ray.orig.z)*ray.invdir.z;
+    float t1 = (bounds[0].x - ray.orig.x) * ray.invdir.x;
+    float t2 = (bounds[1].x - ray.orig.x) * ray.invdir.x;
+    float t3 = (bounds[0].y - ray.orig.y) * ray.invdir.y;
+    float t4 = (bounds[1].y - ray.orig.y) * ray.invdir.y;
+    float t5 = (bounds[0].z - ray.orig.z) * ray.invdir.z;
+    float t6 = (bounds[1].z - ray.orig.z) * ray.invdir.z;
     float t = 0;
     float t_near = std::max(std::max(std::min(t1, t2), std::min(t3, t4)), std::min(t5, t6));
     float t_far = std::min(std::min(std::max(t1, t2), std::max(t3, t4)), std::max(t5, t6));
 
     // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-    if (t_far < 0)
-    {
+    if (t_far < 0) {
         t = t_far;
         return false;
     }
 
     // if tmin > tmax, ray doesn't intersect AABB
-    if (t_near> t_far)
-    {
+    if (t_near > t_far) {
         t = t_far;
         return false;
     }
@@ -369,7 +373,7 @@ Vec3f anti_aliasing(double dir_x, double dir_y, double dir_z,
     return (anti_alias / 5);
 }
 
-void SavingBmpPpm (std::string file_name, int width, int height, std::vector<Vec3f> framebuffer){
+void SavingBmpPpm(std::string file_name, int width, int height, std::vector<Vec3f> framebuffer) {
     std::ofstream ofs; // save the framebuffer to file
     ofs.open(file_name, std::ios::binary);
     ofs << "P6\n" << width << " " << height << "\n255\n";
@@ -384,17 +388,17 @@ void SavingBmpPpm (std::string file_name, int width, int height, std::vector<Vec
     ofs.close();
 }
 
-void SavingJpg (const char* file_name, int width, int height, std::vector<Vec3f> framebuffer){
-    std::vector<unsigned char> Npixmap(width*height*3);
-    for (size_t i = 0; i < height*width; ++i) {
+void SavingJpg(const char *file_name, int width, int height, std::vector<Vec3f> framebuffer) {
+    std::vector<unsigned char> Npixmap(width * height * 3);
+    for (size_t i = 0; i < height * width; ++i) {
         Vec3f &c = framebuffer[i];
         float max = std::max(c[0], std::max(c[1], c[2]));
-        if (max>1) c = c*(1./max);
-        for (size_t j = 0; j<3; j++) {
-            Npixmap[i*3+j] = (unsigned char)(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
+        if (max > 1) c = c * (1. / max);
+        for (size_t j = 0; j < 3; j++) {
+            Npixmap[i * 3 + j] = (unsigned char) (255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
         }
     }
-    stbi_write_jpg(file_name, width, height, 3, Npixmap.data(), 100);  
+    stbi_write_jpg(file_name, width, height, 3, Npixmap.data(), 100);
 }
 
 void Render::render(const char *out_file_path, const std::vector<std::unique_ptr<const entities::Figure>> &figures,
@@ -402,16 +406,16 @@ void Render::render(const char *out_file_path, const std::vector<std::unique_ptr
     //tree_trace(raytracing::tree);
     const int width = 1920;
     const int height = 1080;
-    int env_width,env_height,n=-1;
+    int env_width, env_height, n = -1;
     const float fov = M_PI / 3.0; ///that's a viewing angle = pi/3
     std::vector<Vec3f> framebuffer(width * height);
     unsigned char *pixmap = stbi_load("../3d.jpg", &env_width, &env_height, &n, STBI_rgb);
-    if (!pixmap || 3!=n) {
+    if (!pixmap || 3 != n) {
         std::cerr << "Error: can not load the environment map" << std::endl;
         exit(-1);
     }
-    BackGround::GetData(env_width,env_height,std::vector<Vec3f>(env_width*env_height));
-    for (int j = BackGround::height-1; j>=0 ; j--) {
+    BackGround::GetData(env_width, env_height, std::vector<Vec3f>(env_width * env_height));
+    for (int j = BackGround::height - 1; j >= 0; j--) {
         for (int i = 0; i < BackGround::width; i++) {
             BackGround::envmap[i + j * BackGround::width] =
                     Vec3f(pixmap[(i + j * BackGround::width) * 3 + 0], pixmap[(i + j * BackGround::width) * 3 + 1],
@@ -442,18 +446,21 @@ void Render::render(const char *out_file_path, const std::vector<std::unique_ptr
         task.get();
     }
     int image_format;
-    if (!strcmp (out_file_path + strlen(out_file_path) - 4, ".jpg")){
-        image_format = 1; 
-    } else { 
+    if (!strcmp(out_file_path + strlen(out_file_path) - 4, ".jpg")) {
+        image_format = 1;
+    } else {
         image_format = 2;
     };
     try {
         switch (image_format) {
-            case 1: raytracing::SavingJpg(out_file_path, width, height, framebuffer);
-                    break;
-            case 2: raytracing::SavingBmpPpm(out_file_path, width, height, framebuffer);
-                    break;
-            default: throw std::runtime_error("Incorrect picture format!");
+            case 1:
+                raytracing::SavingJpg(out_file_path, width, height, framebuffer);
+                break;
+            case 2:
+                raytracing::SavingBmpPpm(out_file_path, width, height, framebuffer);
+                break;
+            default:
+                throw std::runtime_error("Incorrect picture format!");
         }
     }
     catch (const std::exception &er) {

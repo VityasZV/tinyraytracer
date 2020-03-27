@@ -11,7 +11,7 @@
 #include <string.h>
 
 
-picture::Picture::  Picture(const int argc, const char **argv) {
+picture::Picture::Picture(const int argc, const char **argv) {
     PreparingOutFileAndScene(argc, argv);
     for (const auto &p : spheres_params) {
         figures.emplace_back(std::make_unique<raytracing::entities::Sphere>(p.coordinates, p.radius, p.material));
@@ -108,10 +108,10 @@ void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
             break;
         case 2:
             spheres_params = {
-                    {Vec3f(-10, -2.5, -10),    2, Materials[MaterialName::red_rubber]},
+                    {Vec3f(-10, -2.5, -10), 2, Materials[MaterialName::red_rubber]},
                     {Vec3f(-10, -2.5, -30), 2, Materials[MaterialName::red_rubber]},
                     {Vec3f(10, -2.5, -10),  2, Materials[MaterialName::red_rubber]},
-                    {Vec3f(10, -2.5, -30),      2, Materials[MaterialName::red_rubber]},
+                    {Vec3f(10, -2.5, -30),  2, Materials[MaterialName::red_rubber]},
                     {Vec3f(-8, 5, -18),     4, Materials[MaterialName::mirror]},
                     {Vec3f(7, 5, -18),      4, Materials[MaterialName::mirror]}
 
@@ -123,7 +123,7 @@ void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
     }
 }
 
-void picture::Picture::MakeTriangleMash(const char *file_name, const Vec3f& shift) {
+void picture::Picture::MakeTriangleMash(const char *file_name, const Vec3f &shift) {
     auto shift_deer = Vec3f(-5, -4, -8);
     shift_deer = shift_deer + shift;
     auto figure_material = Materials[MaterialName::red_rubber];
