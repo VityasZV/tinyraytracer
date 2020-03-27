@@ -6,6 +6,16 @@
 #include <cassert>
 #include <iostream>
 
+namespace raytracing::entities {
+enum class Axis {
+    x, y, z
+};
+}//namespace raytracing::AAPlane
+
+static float EPS = 1e-6;
+
+#define BETW(a, b, c) ((a >= b) && (a <= c))
+
 template<size_t DIM, typename T>
 struct vec {
     vec() { for (size_t i = DIM; i--; data_[i] = T()); }
@@ -69,6 +79,10 @@ struct vec<3, T> {
 
     float norm() { return std::sqrt(x * x + y * y + z * z); }
 
+    bool operator<(const vec<3, T> &v) const { return x <= v.x && y <= v.y && z <= v.z; }
+
+    static inline vec<3, T> eps() { return vec<3, T>(EPS, EPS, EPS); }
+
     vec<3, T> &normalize(T l = 1) {
         *this = (*this) * (l / norm());
         return *this;
@@ -82,6 +96,17 @@ struct vec<3, T> {
     }
 
     friend vec<3, T> operator/(const T &r, const vec<3, T> &v) { return vec<3, T>(r / v.x, r / v.y, r / v.z); }
+
+    T &operator[](const raytracing::entities::Axis &axis) {
+        switch (axis) {
+            case raytracing::entities::Axis::x:
+                return x;
+            case raytracing::entities::Axis::y:
+                return y;
+            case raytracing::entities::Axis::z:
+                return z;
+        }
+    }
 
     T x, y, z;
 };

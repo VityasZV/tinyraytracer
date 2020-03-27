@@ -24,18 +24,37 @@ picture::Picture::  Picture(const int argc, const char **argv) {
     const auto shift3 = Vec3f(15, 1, -6);
     const auto shifts = {shift1, shift2, shift3};
     //here is my triangles
-    for (const auto &p : triangle_params) {
-        for (const auto &s : shifts) {
-            figures.emplace_back(
-                    std::make_unique<raytracing::entities::Triangle>(p.p0 + s, p.p1 + s, p.p2 + s,
-                                                                     p.material));
-        }
-    }
+//    for (const auto &p : triangle_params) {
+//        for (const auto &s : shifts) {
+//            figures.emplace_back(
+//                    std::make_unique<raytracing::entities::Triangle>(p.p0 + s, p.p1 + s, p.p2 + s,
+//                                                                     p.material));
+//        }
+//    }
+    const auto c_shift1 = Vec3f(3, 1, 0);
+    const auto c_shift2 = Vec3f(-3, 1, 0);
+    const auto c_shift3 = Vec3f(0, 1, 0);
+    const auto c_shifts = {c_shift1, c_shift2, c_shift3};
+//    for (const auto& p : cubes_params){
+//        for (const auto &s : c_shifts) {
+//            figures.emplace_back(std::make_unique<raytracing::entities::Cube>(p.vmin + s, p.vmax + s, p.material));
+//        }
+//    }
     triangle_params.clear();
     //here comes the duck
-//    MakeTriangleMash("../duck.obj");
+    const auto duck_shift1 = Vec3f{-10, 0, 0};
+    const auto duck_shift2 = Vec3f{-10, 0, -10};
+    const auto duck_shift3 = Vec3f{0, 0, -10};
+
+
+    // MakeTriangleMash("../duck.obj", Vec3f(0,0,0));
+    // MakeTriangleMash("../duck.obj", duck_shift1);
+    // MakeTriangleMash("../duck.obj", duck_shift2);
+    // MakeTriangleMash("../duck.obj", duck_shift3);
     //here comes the deer
-//    MakeTriangleMash("../deer.obj");
+    //MakeTriangleMash("../deer.obj");
+    //std::cout << "Всего примитивов " << figures.size() << std::endl;
+    FormKdTree();
 }
 
 void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
@@ -104,8 +123,9 @@ void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
     }
 }
 
-void picture::Picture::MakeTriangleMash(const char *file_name) {
+void picture::Picture::MakeTriangleMash(const char *file_name, const Vec3f& shift) {
     auto shift_deer = Vec3f(-5, -4, -8);
+    shift_deer = shift_deer + shift;
     auto figure_material = Materials[MaterialName::red_rubber];
     std::vector<Vec3f> verticels;
     std::vector<Vec2f> uvIndices;
@@ -128,7 +148,7 @@ void picture::Picture::MakeTriangleMash(const char *file_name) {
             if (strncmp(file_name, "../deer.obj", 11) == 0) {
                 verticels.push_back(v / 200. + shift_deer);
             } else {
-                verticels.push_back(v);
+                verticels.push_back(v + shift);
             }
         } else if (!line.compare(0, 2, "vt")) {
             continue;
@@ -160,6 +180,19 @@ void picture::Picture::MakeTriangleMash(const char *file_name) {
                                                                               verticels[face.z], figure_material));
     }
 
+}
+
+void picture::Picture::FormKdTree() {
+    raytracing::entities::AABB space(Vec3f(-30, -16, -5), Vec3f(30, 16, -30)); //initial coube
+    std::vector<std::shared_ptr<raytracing::kd_tree::KdTree::RenderWrapper>> figures_in_tree_root;
+    for (auto &figure : figures) {
+        auto bounding_box = figure->GetAABB();
+        figures_in_tree_root.push_back(
+                std::make_shared<raytracing::kd_tree::KdTree::RenderWrapper>(std::move(figure), bounding_box));
+    }
+    figures.clear();
+    kd_tree = raytracing::kd_tree::KdTree::build(figures_in_tree_root, space, 0);
+    //std::cout << "finish" << std::endl;
 }
 
 
