@@ -62,7 +62,7 @@ class Picture {
 private:
     std::vector<SphereParams> spheres_params;
     std::vector<TriangleParams> triangle_params;
-
+    std::vector<CubeParams> cubes_params;
     void PreparingOutFileAndScene(int argc, const char **argv);
 
     std::unordered_map<MaterialName, raytracing::entities::Material> Materials{
@@ -80,10 +80,6 @@ private:
             {Vec3f(-20, 20, 20), 1.5},
             {Vec3f(30, 50, -25), 1.8},
             {Vec3f(30, 20, 30),  1.7}
-    };
-
-    std::vector<CubeParams> cubes_params{
-            {Vec3f(-3, 0, -3), Vec3f(1, 4, -7), Materials[MaterialName::mirror]}
     };
 
     void MakeTriangleMash(const char *file_name, const Vec3f &shift);

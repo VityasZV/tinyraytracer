@@ -2,8 +2,6 @@
 #include "picture/picture.h"
 #include "raytracing/raytracing.h"
 #include <memory>
-#include <variant>
-
 
 int main(int argc, const char **argv) {
     try {

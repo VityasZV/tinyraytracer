@@ -22,7 +22,7 @@ picture::Picture::Picture(const int argc, const char **argv) {
     const auto shift1 = Vec3f(5, 1, -6);
     const auto shift2 = Vec3f(-5, 1, -6);
     const auto shift3 = Vec3f(15, 1, -6);
-    const auto shifts = {shift1, shift2, shift3};
+    const auto shifts = {shift1};
     //here is my triangles
 //    for (const auto &p : triangle_params) {
 //        for (const auto &s : shifts) {
@@ -31,15 +31,15 @@ picture::Picture::Picture(const int argc, const char **argv) {
 //                                                                     p.material));
 //        }
 //    }
-    const auto c_shift1 = Vec3f(3, 1, 0);
-    const auto c_shift2 = Vec3f(-3, 1, 0);
+    const auto c_shift1 = Vec3f(-3, 1, 0);
+    const auto c_shift2 = Vec3f(3, 1, 0);
     const auto c_shift3 = Vec3f(0, 1, 0);
     const auto c_shifts = {c_shift1, c_shift2, c_shift3};
-//    for (const auto& p : cubes_params){
-//        for (const auto &s : c_shifts) {
-//            figures.emplace_back(std::make_unique<raytracing::entities::Cube>(p.vmin + s, p.vmax + s, p.material));
-//        }
-//    }
+    for (const auto& p : cubes_params){
+        for (const auto &s : c_shifts) {
+            figures.emplace_back(std::make_unique<raytracing::entities::Cube>(p.vmin + s, p.vmax + s, p.material));
+        }
+    }
     triangle_params.clear();
     //here comes the duck
     const auto duck_shift1 = Vec3f{-10, 0, 0};
@@ -54,7 +54,7 @@ picture::Picture::Picture(const int argc, const char **argv) {
     //here comes the deer
     //MakeTriangleMash("../deer.obj");
     //std::cout << "Всего примитивов " << figures.size() << std::endl;
-    FormKdTree();
+    //FormKdTree();
 }
 
 void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
@@ -82,6 +82,9 @@ void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
                     {Vec3f(1.5, -0.5, -18),  3, Materials[MaterialName::red_rubber]},
                     {Vec3f(7, 5, -18),       4, Materials[MaterialName::mirror]},
                     {Vec3f(-8, 5, -18),      4, Materials[MaterialName::mirror]}
+            };
+            cubes_params = {
+                    {Vec3f(-0.5, 0, -4), Vec3f(0.5, 1, -5), Materials[MaterialName::red_rubber]}
             };
             triangle_params = {
                     //dont forget about right trio while adding params!!!
