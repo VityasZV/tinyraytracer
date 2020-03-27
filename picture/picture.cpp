@@ -35,11 +35,11 @@ picture::Picture::  Picture(const int argc, const char **argv) {
     const auto c_shift2 = Vec3f(-3, 1, 0);
     const auto c_shift3 = Vec3f(0, 1, 0);
     const auto c_shifts = {c_shift1, c_shift2, c_shift3};
-    for (const auto& p : cubes_params){
-        for (const auto &s : c_shifts) {
-            figures.emplace_back(std::make_unique<raytracing::entities::Cube>(p.vmin + s, p.vmax + s, p.material));
-        }
-    }
+//    for (const auto& p : cubes_params){
+//        for (const auto &s : c_shifts) {
+//            figures.emplace_back(std::make_unique<raytracing::entities::Cube>(p.vmin + s, p.vmax + s, p.material));
+//        }
+//    }
     triangle_params.clear();
     //here comes the duck
     const auto duck_shift1 = Vec3f{-10, 0, 0};
@@ -47,10 +47,10 @@ picture::Picture::  Picture(const int argc, const char **argv) {
     const auto duck_shift3 = Vec3f{0, 0, -10};
 
 
-//    MakeTriangleMash("../duck.obj", Vec3f(0,0,0));
-//    MakeTriangleMash("../duck.obj", duck_shift1);
-//    MakeTriangleMash("../duck.obj", duck_shift2);
-//    MakeTriangleMash("../duck.obj", duck_shift3);
+    MakeTriangleMash("../duck.obj", Vec3f(0,0,0));
+    MakeTriangleMash("../duck.obj", duck_shift1);
+    MakeTriangleMash("../duck.obj", duck_shift2);
+    MakeTriangleMash("../duck.obj", duck_shift3);
     //here comes the deer
     //MakeTriangleMash("../deer.obj");
     //std::cout << "Всего примитивов " << figures.size() << std::endl;
