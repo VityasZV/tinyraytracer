@@ -142,6 +142,10 @@ bool Boardscene(int scene_id, float d, Vec3f point, std::vector<float> Distance)
         case 2:
             return d > 0 && fabs(point.x) < 10 && point.z < -10 && point.z > -30 && d < spheres_dist &&
                    d < triangles_dist && d < cubes_dist;
+        case 3:
+            return d > 0 && d < spheres_dist && d < triangles_dist && d < cubes_dist;
+        default:
+            throw std::runtime_error("incorrect scene number");
     }
 }
 
@@ -426,24 +430,44 @@ void Render::render(const char *out_file_path, const std::vector<std::unique_ptr
     const auto amount_of_threads = std::thread::hardware_concurrency(); //because of asynchronius tasks we can make it a bit bigger
     std::vector<std::future<void>> tasks(amount_of_threads);
     size_t portion = height / amount_of_threads;
-    for (size_t start = 0, finish = portion, index = 0; index < amount_of_threads; ++index, start = finish, finish =
-            index == amount_of_threads - 1 ? height : finish + portion) {
-        tasks[index] = std::async(std::launch::async, [&, start, finish, width, height, fov]() {
-            for (size_t j = start; j < finish; ++j) {
-                for (size_t i = 0; i < width; ++i) {
-                    auto dir_x = (i + 0.5) - width / 2.;
-                    auto dir_y = -(j + 0.5) + height / 2.;    // this flips the image at the same time
-                    auto dir_z = -height / (2. * tan(fov / 2.));
-                    //FIXME needs check on scene 3, if scene == 3 then without anti_aliasing
-                    framebuffer[i + j * width] = entities::casting_ray::cast_ray(entities::Ray(
-                            Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z).normalize()), figures, lights);
-                    //framebuffer[i + j * width] = raytracing::anti_aliasing(dir_x, dir_y, dir_z, figures, lights);
+    if (picture::Picture::scene_id == 3) {
+        //without anti_aliasing
+        for (size_t start = 0, finish = portion, index = 0; index < amount_of_threads; ++index, start = finish, finish =
+                index == amount_of_threads - 1 ? height : finish + portion) {
+            tasks[index] = std::async(std::launch::async, [&, start, finish, width, height, fov]() {
+                for (size_t j = start; j < finish; ++j) {
+                    for (size_t i = 0; i < width; ++i) {
+                        auto dir_x = (i + 0.5) - width / 2.;
+                        auto dir_y = -(j + 0.5) + height / 2.;    // this flips the image at the same time
+                        auto dir_z = -height / (2. * tan(fov / 2.));
+                        framebuffer[i + j * width] = entities::casting_ray::cast_ray(entities::Ray(
+                                Vec3f(0, 0, 0), Vec3f(dir_x, dir_y, dir_z).normalize()), figures, lights);
+                    }
                 }
-            }
-        });
+            });
+        }
+        for (auto &&task : tasks) {
+            task.get();
+        }
     }
-    for (auto &&task : tasks) {
-        task.get();
+    else {
+        //with antialiasing
+        for (size_t start = 0, finish = portion, index = 0; index < amount_of_threads; ++index, start = finish, finish =
+                index == amount_of_threads - 1 ? height : finish + portion) {
+            tasks[index] = std::async(std::launch::async, [&, start, finish, width, height, fov]() {
+                for (size_t j = start; j < finish; ++j) {
+                    for (size_t i = 0; i < width; ++i) {
+                        auto dir_x = (i + 0.5) - width / 2.;
+                        auto dir_y = -(j + 0.5) + height / 2.;    // this flips the image at the same time
+                        auto dir_z = -height / (2. * tan(fov / 2.));
+                        framebuffer[i + j * width] = raytracing::anti_aliasing(dir_x, dir_y, dir_z, figures, lights);
+                    }
+                }
+            });
+        }
+        for (auto &&task : tasks) {
+            task.get();
+        }
     }
     int image_format;
     if (!strcmp(out_file_path + strlen(out_file_path) - 4, ".jpg")) {

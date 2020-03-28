@@ -82,7 +82,7 @@ private:
             {Vec3f(30, 20, 30),  1.7}
     };
 
-    void MakeTriangleMash(const char *file_name, const Vec3f &shift);
+    void MakeTriangleMash(const char *file_name, const Vec3f &shift = Vec3f(0,0,0));
 
     void FormKdTree();
 

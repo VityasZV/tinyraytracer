@@ -20,21 +20,21 @@ picture::Picture::Picture(const int argc, const char **argv) {
         lights.emplace_back(raytracing::entities::Light(p.position, p.intensity));
     }
     const auto shift1 = Vec3f(5, 1, -6);
-    const auto shift2 = Vec3f(-5, 1, -6);
-    const auto shift3 = Vec3f(15, 1, -6);
+//    const auto shift2 = Vec3f(-5, 1, -6);
+//    const auto shift3 = Vec3f(15, 1, -6);
     const auto shifts = {shift1};
     //here is my triangles
-//    for (const auto &p : triangle_params) {
-//        for (const auto &s : shifts) {
-//            figures.emplace_back(
-//                    std::make_unique<raytracing::entities::Triangle>(p.p0 + s, p.p1 + s, p.p2 + s,
-//                                                                     p.material));
-//        }
-//    }
+    for (const auto &p : triangle_params) {
+        for (const auto &s : shifts) {
+            figures.emplace_back(
+                    std::make_unique<raytracing::entities::Triangle>(p.p0 + s, p.p1 + s, p.p2 + s,
+                                                                     p.material));
+        }
+    }
     const auto c_shift1 = Vec3f(-3, 1, 0);
     const auto c_shift2 = Vec3f(3, 1, 0);
     const auto c_shift3 = Vec3f(0, 1, 0);
-    const auto c_shifts = {c_shift1, c_shift2, c_shift3};
+    const auto c_shifts = {c_shift1, c_shift2};
     for (const auto& p : cubes_params){
         for (const auto &s : c_shifts) {
             figures.emplace_back(std::make_unique<raytracing::entities::Cube>(p.vmin + s, p.vmax + s, p.material));
@@ -46,15 +46,15 @@ picture::Picture::Picture(const int argc, const char **argv) {
     const auto duck_shift2 = Vec3f{-10, 0, -10};
     const auto duck_shift3 = Vec3f{0, 0, -10};
 
+    //if scene == 3 return hard figures and form a kd tree
+    if (picture::Picture::scene_id == 3){
+        //here comes the deer
+        MakeTriangleMash("../deer.obj");
+        MakeTriangleMash("../duck.obj");
+        std::cout << "Всего примитивов " << figures.size() << std::endl;
+        FormKdTree();
+    }
 
-    // MakeTriangleMash("../duck.obj", Vec3f(0,0,0));
-    // MakeTriangleMash("../duck.obj", duck_shift1);
-    // MakeTriangleMash("../duck.obj", duck_shift2);
-    // MakeTriangleMash("../duck.obj", duck_shift3);
-    //here comes the deer
-    //MakeTriangleMash("../deer.obj");
-    //std::cout << "Всего примитивов " << figures.size() << std::endl;
-    //FormKdTree();
 }
 
 void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
@@ -121,6 +121,7 @@ void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
             };
             break;
         case 3:
+            break;
         default:
             throw std::runtime_error("Incorrect scene number!");
     }
