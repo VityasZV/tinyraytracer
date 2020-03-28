@@ -20,7 +20,6 @@ KdTree::build(const std::vector<std::shared_ptr<RenderWrapper>> &objs, entities:
         return std::make_shared<KdTree::Node>(box, objs);
     }
     //TODO make SAH algorithm because thats shit
-    // algorithm 1 (naive kdtree)
     auto best_plane = cut(objs, entities::Axis::x); //fixed plane on x axis
     std::optional<std::pair<raytracing::entities::AABB, raytracing::entities::AABB>> pair_of_cubes;
     try {

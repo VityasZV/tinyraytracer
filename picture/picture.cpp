@@ -122,10 +122,10 @@ void picture::Picture::PreparingOutFileAndScene(int argc, const char **argv) {
             break;
         case 3:
             spheres_params = {
-                    {Vec3f(0, 5, -18), 3, Materials[MaterialName::mirror]},
-                    {Vec3f(-3, 0, -16), 2, Materials[MaterialName::ivory]},
+                    {Vec3f(0, 5, -18),       3, Materials[MaterialName::mirror]},
+                    {Vec3f(-3, 0, -16),      2, Materials[MaterialName::ivory]},
                     {Vec3f(-1.0, -1.5, -12), 2, Materials[MaterialName::glass]},
-                    {Vec3f(1.5, -0.5, -18), 3, Materials[MaterialName::red_rubber]},
+                    {Vec3f(1.5, -0.5, -18),  3, Materials[MaterialName::red_rubber]},
             };
             break;
         default:

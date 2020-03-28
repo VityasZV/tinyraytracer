@@ -1,6 +1,5 @@
 #include "raytracing.h"
 #include "../picture/picture.h"
-#include "entities.h"
 
 
 #include <cmath>
@@ -442,8 +441,7 @@ void Render::render(const char *out_file_path, const std::vector<std::unique_ptr
         for (auto &&task : tasks) {
             task.get();
         }
-    }
-    else {
+    } else {
         //with antialiasing
         for (size_t start = 0, finish = portion, index = 0; index < amount_of_threads; ++index, start = finish, finish =
                 index == amount_of_threads - 1 ? height : finish + portion) {

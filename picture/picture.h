@@ -63,6 +63,7 @@ private:
     std::vector<SphereParams> spheres_params;
     std::vector<TriangleParams> triangle_params;
     std::vector<CubeParams> cubes_params;
+
     void PreparingOutFileAndScene(int argc, const char **argv);
 
     std::unordered_map<MaterialName, raytracing::entities::Material> Materials{
@@ -82,7 +83,7 @@ private:
             {Vec3f(30, 20, 30),  1.7}
     };
 
-    void MakeTriangleMash(const char *file_name, const Vec3f &shift = Vec3f(0,0,0));
+    void MakeTriangleMash(const char *file_name, const Vec3f &shift = Vec3f(0, 0, 0));
 
     void FormKdTree();
 
