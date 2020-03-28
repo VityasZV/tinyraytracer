@@ -88,13 +88,6 @@ raytracing::Render::bin_search_in_tree(const raytracing::entities::Ray &ray,
             return res;
         }();
         return result;
-
-        //returning result
-        //FIXME upper code goes throughout all nodes of a tree, checking only those nodes,
-        // which have aabb intersection with ray, and if we find figures there->we are checking
-        // figures on intersection
-        //FIXME now it works a bit incorrectly because a dont know which figure intersected first -> wrong dist of sphere/triangle -> bad shadows and wrong
-        // show of figures -- FIXED with vector of nodes that ray intersects. right now i deleted down code -> maybe not finally
     }
     return {};
 }
